@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Probe Protocol v1 envelope",
+  "type": "object",
+  "required": ["v", "type", "node", "msg_id", "ts", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "v": { "const": 1 },
+    "type": {
+      "enum": ["cmd", "result", "monitor", "status", "telemetry", "announce"]
+    },
+    "node": { "type": "string", "pattern": "^probe-([0-9a-f]{6}|server)$" },
+    "msg_id": { "type": "string", "minLength": 8, "maxLength": 26 },
+    "ts": { "type": "integer", "minimum": 1000000000, "maximum": 4102444800 },
+    "data": { "type": "object" }
+  }
+}
