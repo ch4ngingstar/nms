@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "telemetry data (spec §6.5)",
+  "type": "object",
+  "required": ["free_heap", "uptime_s", "state"],
+  "additionalProperties": false,
+  "properties": {
+    "free_heap": { "type": "integer", "minimum": 0 },
+    "uptime_s": { "type": "integer", "minimum": 0 },
+    "rssi": { "type": "integer", "minimum": -100, "maximum": 0 },
+    "channel": { "type": "integer", "minimum": 1, "maximum": 14 },
+    "state": {
+      "enum": ["unprovisioned", "connecting", "online", "busy", "surveying", "offline"]
+    },
+    "jobs_done": { "type": "integer", "minimum": 0 }
+  }
+}
