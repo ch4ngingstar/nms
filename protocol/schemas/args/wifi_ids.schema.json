@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "wifi_ids args (spec §6.4)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "duration_s": { "type": "integer", "minimum": 1, "maximum": 300 },
+    "channels": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1, "maximum": 14 },
+      "uniqueItems": true
+    },
+    "known_aps": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["bssid"],
+        "properties": {
+          "bssid": { "type": "string", "pattern": "^(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$" },
+          "ssid": { "type": "string", "maxLength": 32 }
+        }
+      }
+    }
+  }
+}
