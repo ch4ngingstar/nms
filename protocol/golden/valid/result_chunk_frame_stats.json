@@ -1,0 +1,4 @@
+{"v":1,"type":"result","node":"probe-a4c1f8","msg_id":"01J8X2KB0009","ts":1755302400,
+ "data":{"event":"chunk","job_id":"job-7f3a98","seq":1,
+ "frame_stats":{"total":8213,"management":1104,"data":6890,"control":219,
+ "deauth":142,"probe_request":57}}}

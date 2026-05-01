@@ -1,0 +1,4 @@
+{"v":1,"type":"cmd","node":"probe-a4c1f8","msg_id":"01J8X2KA1240","ts":1755302400,
+ "data":{"job_id":"job-7f3a98","cmd":"wifi_ids",
+ "args":{"duration_s":60,"channels":[1,6,11],
+ "known_aps":[{"bssid":"a0:b7:65:11:22:33","ssid":"Home"}]}}}

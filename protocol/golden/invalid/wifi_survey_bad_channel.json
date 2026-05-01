@@ -1,0 +1,2 @@
+{"v":1,"type":"cmd","node":"probe-a4c1f8","msg_id":"01J8X2KA1235","ts":1755302400,
+ "data":{"job_id":"job-7f3a93","cmd":"wifi_survey","args":{"duration_s":30,"channels":[99]}}}
