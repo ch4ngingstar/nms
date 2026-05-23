@@ -84,7 +84,7 @@ class VirtualProbe:
 
         if self._busy:
             self._result({"event": "error", "job_id": job_id, "code": "busy",
-                          "message": "busy"})
+                          "message": "a job is already running"})
             return
         self._run(cmd, job_id, args)
 
