@@ -31,7 +31,7 @@ def parse_latency_ms(output: str) -> float | None:
     return float(match.group(1)) if match else None
 
 
-def check_port(ip_address: str, port: int, timeout: float = 2.0) -> str:
+def check_port(ip_address: str, port: int, timeout: float = 1.0) -> str:
     """`open` if a TCP connection is accepted, `closed` otherwise."""
     try:
         with socket.create_connection((ip_address, port), timeout=timeout):
