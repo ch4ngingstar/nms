@@ -31,7 +31,9 @@ def handle_announce(message: dict) -> Node:
     node.chip = data["chip"]
     node.mac = data["mac"]
     node.capabilities = data["capabilities"]
-    node.last_seen = seen_at
+    if data["state"] != "offline":
+        # An offline notice is usually the broker's Last Will.
+        node.last_seen = seen_at
     db.session.commit()
 
     bus.publish("node_status", {"node": node.node_id, "state": node.state,
@@ -47,7 +49,9 @@ def handle_status(message: dict) -> Node:
 
     node.state = data["state"]
     node.last_status_ts = seen_at
-    node.last_seen = seen_at
+    if data["state"] != "offline":
+        # An offline notice is usually the broker's Last Will.
+        node.last_seen = seen_at
     db.session.commit()
 
     bus.publish("node_status", {"node": node.node_id, "state": node.state,
