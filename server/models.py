@@ -27,6 +27,75 @@ class Node(db.Model):
     last_status_ts = db.Column(db.DateTime(timezone=True))
 
 
+class Device(db.Model):
+    __tablename__ = "devices"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    ip = db.Column(db.String(64), nullable=False, index=True)
+    role = db.Column(db.String(80), nullable=False, default="unknown")
+    enabled = db.Column(db.Boolean, nullable=False, default=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+
+class MonitorCycle(db.Model):
+    __tablename__ = "monitor_cycles"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    cycle_ts = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
+    received_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("node_id", "cycle_ts", name="uq_cycle_node_ts"),
+    )
+
+
+class MonitorResult(db.Model):
+    __tablename__ = "monitor_results"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cycle_id = db.Column(
+        db.Integer,
+        db.ForeignKey("monitor_cycles.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    device_id = db.Column(
+        db.Integer,
+        db.ForeignKey("devices.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    status = db.Column(db.String(8), nullable=False)
+    latency_ms = db.Column(db.Float)
+    ports = db.Column(db.JSON)
+
+
+class MonitorRollup(db.Model):
+    __tablename__ = "monitor_rollups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(db.String(NODE_ID_LEN), nullable=False, index=True)
+    device_id = db.Column(db.Integer, nullable=False, index=True)
+    hour_ts = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
+    samples = db.Column(db.Integer, nullable=False)
+    up_count = db.Column(db.Integer, nullable=False)
+    latency_min = db.Column(db.Float)
+    latency_avg = db.Column(db.Float)
+    latency_max = db.Column(db.Float)
+
+    __table_args__ = (
+        db.UniqueConstraint("node_id", "device_id", "hour_ts", name="uq_rollup"),
+    )
+
+
 class Job(db.Model):
     __tablename__ = "jobs"
 
