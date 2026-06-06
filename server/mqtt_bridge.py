@@ -46,7 +46,11 @@ def dispatch(topic: str, payload: bytes) -> None:
     handler = HANDLERS.get(topic_leaf(topic))
     if handler is None:
         return
-    message = validate_message(json.loads(payload))
+    try:
+        message = validate_message(json.loads(payload))
+    except (ProtocolError, ValueError) as exc:
+        log.warning("dropping invalid message on %s: %s", topic, exc)
+        return
     handler(message)
 
 
