@@ -213,8 +213,12 @@ def _store_chunk(job: Job, data: dict, received_at) -> None:
     # Projections key on the chunk's payload shape, not the command name: only
     # wifi_survey emits `aps`, only ble_scan `devices`, only wifi_ids `alerts`
     # (its terminal `frame_stats` chunk carries none and is simply stored raw).
-    # Projections key on payload shape
-
+    if "aps" in data:
+        _project_ap_observations(job, data, received_at)
+    if "devices" in data:
+        _project_ble_observations(job, data, received_at)
+    if "alerts" in data:
+        _project_ids_alerts(job, data, received_at)
 
 
 def handle_result(message: dict):
