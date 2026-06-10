@@ -35,6 +35,7 @@ class Device(db.Model):
     ip = db.Column(db.String(64), nullable=False, index=True)
     role = db.Column(db.String(80), nullable=False, default="unknown")
     enabled = db.Column(db.Boolean, nullable=False, default=True)
+    # Null means every probe monitors this device; set restricts it to one.
     node_id = db.Column(
         db.String(NODE_ID_LEN),
         db.ForeignKey("nodes.node_id", ondelete="SET NULL"),
@@ -109,6 +110,7 @@ class Job(db.Model):
     args = db.Column(db.JSON, nullable=False, default=dict)
     state = db.Column(db.String(STATE_LEN), nullable=False, default="pending", index=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
+    # The deadline slides from the last event, not from creation.
     last_event_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
     deadline_s = db.Column(db.Integer, nullable=False, default=120)
     accepted_at = db.Column(db.DateTime(timezone=True))
@@ -155,3 +157,110 @@ class Telemetry(db.Model):
     channel = db.Column(db.Integer)
     state = db.Column(db.String(STATE_LEN), nullable=False)
     jobs_done = db.Column(db.Integer)
+
+
+class ApObservation(db.Model):
+    __tablename__ = "ap_observations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    job_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("jobs.job_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    bssid = db.Column(db.String(17), nullable=False)
+    ssid = db.Column(db.String(64))
+    channel = db.Column(db.Integer)
+    rssi = db.Column(db.Integer)
+    auth = db.Column(db.String(24))
+    hidden = db.Column(db.Boolean, default=False)
+    observed_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                            default=_utcnow, index=True)
+
+    __table_args__ = (
+        db.Index("ix_ap_bssid_time", "bssid", "observed_at"),
+    )
+
+
+class BleObservation(db.Model):
+    """A BLE device seen by one probe during a ble_scan job.
+
+    The ble_scan analogue of ap_observations: the same multi-vantage question —
+    GROUP BY mac comparing rssi across node_id — is what justifies a typed table
+    rather than leaving the data buried in job_chunks payloads.
+    """
+
+    __tablename__ = "ble_observations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    job_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("jobs.job_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    mac = db.Column(db.String(17), nullable=False)
+    name = db.Column(db.String(64))
+    rssi = db.Column(db.Integer)
+    connectable = db.Column(db.Boolean, default=False)
+    # BT company identifier as reported by the probe (4-hex, e.g. "004C"); the
+    # probe emits the raw id and the server resolves the vendor name.
+    manufacturer = db.Column(db.String(16))
+    observed_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                            default=_utcnow, index=True)
+
+    __table_args__ = (
+        db.Index("ix_ble_mac_time", "mac", "observed_at"),
+    )
+
+
+class IdsAlert(db.Model):
+    """A wireless intrusion-detection alert projected from a wifi_ids or
+    ble_scan job.
+
+    wifi_ids emits heterogeneous alert objects (deauth_flood / rogue_ap /
+    evil_twin); ble_scan's BLE-IDS adds ble_spam_flood. This table flattens
+    them all to a common shape so the security timeline and the rogue-AP view
+    are plain queries. `count` is meaningful only for deauth floods;
+    `target_mac` only for a flood's victim — both are null for the AP-identity
+    alerts, whose subject MAC lands in `source_mac`. `rate` (advertisement
+    packets/sec) and `company_id` (BT company identifier, e.g. "0x004c") are
+    meaningful only for ble_spam_flood, whose spoofed/rotating source has no
+    single MAC worth recording.
+    """
+
+    __tablename__ = "ids_alerts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    job_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("jobs.job_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    alert_type = db.Column(db.String(24), nullable=False, index=True)
+    source_mac = db.Column(db.String(17))
+    target_mac = db.Column(db.String(17))
+    channel = db.Column(db.Integer)
+    count = db.Column(db.Integer)
+    rate = db.Column(db.Integer)
+    company_id = db.Column(db.String(8))
+    detected_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                            default=_utcnow, index=True)
+
+    __table_args__ = (
+        db.Index("ix_ids_type_time", "alert_type", "detected_at"),
+    )
