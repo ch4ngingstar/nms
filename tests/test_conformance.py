@@ -54,7 +54,7 @@ VIRTUAL_NODE = "probe-server"
 def _daemon_up() -> bool:
     try:
         return subprocess.run(["docker", "version"],
-                              capture_output=True, timeout=5).returncode == 0
+                              capture_output=True, timeout=15).returncode == 0
     except Exception:
         return False
 
