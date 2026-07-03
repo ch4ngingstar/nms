@@ -147,3 +147,5 @@ td.m{font-family:var(--mono)}
 .edot.info{background:var(--info)} .edot.iris{background:var(--iris-2)} .edot.mute{background:var(--tx-3)}
 .edot.warn{background:var(--warn)} .edot.crit{background:var(--crit)}
 
+@media(max-width:1100px){ .grid{grid-template-columns:64px 1fr 280px} .nav .lbl,.side .grp,.side .foot,.logo .wm span{display:none} }
+@media(max-width:820px){ .grid{grid-template-columns:1fr;grid-template-rows:auto auto} .rail{display:none} .kpis{grid-template-columns:1fr 1fr} }
