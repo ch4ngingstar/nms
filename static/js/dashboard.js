@@ -4,7 +4,7 @@
            is populated on a projector with nothing else running. */
 
 const state = { nodes:{}, jobs:{}, aps:{}, ble:{}, alerts:[], frames:0 };
-let paused = false, live = false; // activity feed state
+let paused = false, live = false;
 
 const $ = s => document.querySelector(s);
 const el = (t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
