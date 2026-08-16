@@ -696,11 +696,12 @@ def test_offline_status_does_not_advance_last_seen(db, node):
 
 
 def test_surveying_status_advances_last_seen(db, node):
+    before = node.last_seen
     handle_status(envelope("status", {"state": "surveying", "expect_back_in": 30},
                            ts=TS + 60))
     stored = db.session.get(Node, "probe-a4c1f8")
     assert stored.state == "surveying"
-    assert stored.last_seen > node.first_seen
+    assert stored.last_seen != before, "a live node must update last_seen"
 
 
 def test_status_from_unknown_node_creates_it(db):
