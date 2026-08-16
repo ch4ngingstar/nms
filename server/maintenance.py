@@ -108,3 +108,41 @@ def prune_old_cycles(now: datetime | None = None) -> int:
     ).rowcount
     db.session.commit()
     return deleted
+
+
+def _hour_floor(ts: datetime) -> datetime:
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
+
+
+def roll_up_and_prune(now: datetime | None = None) -> tuple[int, int]:
+    """Roll up every complete pre-retention hour, then prune raw cycles.
+
+    Returns `(rollup_rows, cycles_deleted)`. Order matters: the summaries must
+    be written before the raw rows they summarise are deleted.
+    """
+    now = now or _utcnow()
+    cutoff = now - timedelta(days=RAW_RETENTION_DAYS)
+    stamps = db.session.execute(
+        db.select(MonitorCycle.cycle_ts).where(MonitorCycle.cycle_ts < cutoff)
+    ).scalars().all()
+
+    rolled = 0
+    for hour in sorted({_hour_floor(ts) for ts in stamps}):
+        rolled += roll_up_hour(hour)
+    deleted = prune_old_cycles(now)
+    return rolled, deleted
+
+
+def run_forever(app, stop_event, tick_s: int = SWEEP_INTERVAL_S) -> None:  # pragma: no cover
+    """The maintenance thread: sweep every tick, roll up and prune hourly."""
+    last_hourly: datetime | None = None
+    while not stop_event.is_set():
+        with app.app_context():
+            sweep_timeouts()
+            now = _utcnow()
+            if last_hourly is None or now - last_hourly >= timedelta(hours=1):
+                roll_up_and_prune(now)
+                last_hourly = now
+        stop_event.wait(tick_s)

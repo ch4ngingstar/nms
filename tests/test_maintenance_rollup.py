@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
-from server.maintenance import RAW_RETENTION_DAYS, prune_old_cycles, roll_up_hour
+from server.maintenance import (
+    RAW_RETENTION_DAYS, prune_old_cycles, roll_up_and_prune, roll_up_hour,
+)
 from server.models import MonitorCycle, MonitorResult, MonitorRollup
 
 NOW = datetime(2026, 8, 16, 12, 0, tzinfo=timezone.utc)
@@ -75,3 +77,22 @@ def test_prune_keeps_rollups(db, node, device):
     prune_old_cycles(now=NOW)
     assert db.session.query(MonitorCycle).count() == 0
     assert db.session.query(MonitorRollup).count() == 1
+
+
+def test_roll_up_and_prune_summarises_then_deletes(db, node, device):
+    """The one-shot hourly job must roll up old hours before deleting them."""
+    old_hour = (NOW - timedelta(days=RAW_RETENTION_DAYS + 1)).replace(
+        minute=0, second=0, microsecond=0)
+    add_cycle(db, node, device, old_hour, latency=4.0)
+    add_cycle(db, node, device, old_hour + timedelta(minutes=1),
+              status="down")
+    add_cycle(db, node, device, NOW - timedelta(days=1), latency=9.0)  # recent
+
+    rolled, deleted = roll_up_and_prune(now=NOW)
+    assert rolled == 1
+    assert deleted == 2
+    rollup = db.session.query(MonitorRollup).one()
+    assert rollup.samples == 2
+    assert rollup.up_count == 1
+    # The recent cycle is untouched.
+    assert db.session.query(MonitorCycle).count() == 1
