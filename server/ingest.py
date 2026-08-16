@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from server.db import db
 from server.events import bus
-from server.models import Node
+from server.models import Device, MonitorCycle, MonitorResult, Node, Telemetry
 
 
 def to_datetime(epoch_seconds: int) -> datetime:
@@ -67,3 +67,61 @@ def handle_status(message: dict) -> Node:
     bus.publish("node_status", {"node": node.node_id, "state": node.state,
                                 "expect_back_in": data.get("expect_back_in")})
     return node
+
+
+def handle_telemetry(message: dict) -> Telemetry:
+    data = message["data"]
+    seen_at = to_datetime(message["ts"])
+    node = get_or_create_node(message["node"], seen_at)
+    node.last_seen = seen_at
+
+    sample = Telemetry(
+        node_id=node.node_id, ts=seen_at,
+        free_heap=data["free_heap"], uptime_s=data["uptime_s"],
+        rssi=data.get("rssi"), channel=data.get("channel"),
+        state=data["state"], jobs_done=data.get("jobs_done"),
+    )
+    db.session.add(sample)
+    db.session.commit()
+
+    bus.publish("telemetry", {"node": node.node_id, "free_heap": data["free_heap"],
+                              "uptime_s": data["uptime_s"], "rssi": data.get("rssi")})
+    return sample
+
+
+def handle_monitor(message: dict) -> MonitorCycle:
+    data = message["data"]
+    cycle_ts = to_datetime(data["cycle_ts"])
+    node = get_or_create_node(message["node"], cycle_ts)
+
+    existing = db.session.execute(
+        db.select(MonitorCycle).filter_by(node_id=node.node_id, cycle_ts=cycle_ts)
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing          # QoS 1 redelivery; already recorded
+
+    cycle = MonitorCycle(node_id=node.node_id, cycle_ts=cycle_ts)
+    db.session.add(cycle)
+    db.session.flush()
+
+    known_device_ids = {
+        row[0] for row in db.session.execute(db.select(Device.id)).all()
+    }
+    stored = 0
+    for row in data["results"]:
+        # A probe can still be monitoring a device the operator deleted.
+        if row["id"] not in known_device_ids:
+            continue
+        db.session.add(MonitorResult(
+            cycle_id=cycle.id, device_id=row["id"], status=row["status"],
+            latency_ms=row.get("latency_ms"), ports=row.get("ports"),
+        ))
+        stored += 1
+
+    node.last_seen = cycle_ts
+    db.session.commit()
+
+    bus.publish("monitor_cycle", {"node": node.node_id,
+                                  "cycle_ts": data["cycle_ts"],
+                                  "results": stored})
+    return cycle
