@@ -7,9 +7,13 @@ by calling a function. The client that feeds them lives in mqtt_bridge.
 
 from datetime import datetime, timezone
 
+from protocol.job import JobState, JobTracker
 from server.db import db
 from server.events import bus
-from server.models import Device, MonitorCycle, MonitorResult, Node, Telemetry
+from server.models import (
+    ApObservation, Device, Job, JobChunk, MonitorCycle, MonitorResult,
+    Node, Telemetry,
+)
 
 
 def to_datetime(epoch_seconds: int) -> datetime:
@@ -125,3 +129,85 @@ def handle_monitor(message: dict) -> MonitorCycle:
                                   "cycle_ts": data["cycle_ts"],
                                   "results": stored})
     return cycle
+
+
+def _received_seqs(job_id: str) -> list[int]:
+    return [
+        row[0] for row in
+        db.session.execute(db.select(JobChunk.seq).filter_by(job_id=job_id)).all()
+    ]
+
+
+def _gaps_for(job_id: str) -> list[int]:
+    """Reuse the tested tracker rather than reimplementing gap detection."""
+    tracker = JobTracker(job_id)
+    tracker.accept()
+    for seq in _received_seqs(job_id):
+        tracker.chunk(seq, {})
+    return tracker.gaps
+
+
+def _project_ap_observations(job: Job, data: dict, observed_at) -> None:
+    """Explode a wifi_survey chunk into the queryable observations table.
+
+    Only RF survey gets a projection: GROUP BY bssid comparing rssi across
+    node_id is the multi-vantage query that justifies a typed table (spec §6.2).
+    """
+    for access_point in data.get("aps", []):
+        db.session.add(ApObservation(
+            node_id=job.node_id, job_id=job.job_id,
+            bssid=access_point["bssid"], ssid=access_point.get("ssid"),
+            channel=access_point.get("channel"), rssi=access_point.get("rssi"),
+            auth=access_point.get("auth"), hidden=access_point.get("hidden", False),
+            observed_at=observed_at,
+        ))
+
+
+def _store_chunk(job: Job, data: dict, received_at) -> None:
+    seq = data["seq"]
+    already = db.session.execute(
+        db.select(JobChunk.id).filter_by(job_id=job.job_id, seq=seq)
+    ).scalar_one_or_none()
+    if already is not None:
+        return                     # QoS 1 redelivery
+    db.session.add(JobChunk(job_id=job.job_id, seq=seq, payload=data,
+                            received_at=received_at))
+    if job.cmd == "wifi_survey":
+        _project_ap_observations(job, data, received_at)
+
+
+def handle_result(message: dict):
+    """Drive one job's state machine from a result event (spec §8)."""
+    data = message["data"]
+    job = db.session.get(Job, data["job_id"])
+    if job is None:
+        return None                # result for a job this server never issued
+
+    event = data["event"]
+    at = to_datetime(message["ts"])
+    job.last_event_at = at
+
+    if event == "accepted":
+        job.state = JobState.ACCEPTED.value
+        job.accepted_at = at
+    elif event == "chunk":
+        _store_chunk(job, data, at)
+    elif event == "done":
+        db.session.flush()
+        gaps = _gaps_for(job.job_id)
+        job.gaps = gaps
+        job.state = (JobState.INCOMPLETE if gaps else JobState.DONE).value
+        job.chunks = data["chunks"]
+        job.results = data["results"]
+        job.duration_ms = data["duration_ms"]
+        job.finished_at = at
+    elif event == "error":
+        job.state = JobState.ERROR.value
+        job.error_code = data["code"]
+        job.error_message = data["message"]
+        job.finished_at = at
+
+    db.session.commit()
+    bus.publish("job_event", {"job_id": job.job_id, "node": job.node_id,
+                              "event": event, "state": job.state})
+    return job
