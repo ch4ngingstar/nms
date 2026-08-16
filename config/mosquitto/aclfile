@@ -1,0 +1,18 @@
+# Broker ACLs (spec §11, §12). One block per account, committed to the repo.
+# The gitignored passwd file holds the matching hashes; generate node
+# credentials with POST /api/nodes and apply the printed commands.
+
+# The command-and-control server: reads everything, writes only cmd topics.
+user nms-server
+topic read nms/v1/#
+topic write nms/v1/node/+/cmd
+
+# The virtual probe (probe-server): a true protocol peer, confined to its own
+# topics plus the shared announce channel.
+user probe-server
+topic write nms/v1/node/probe-server/result
+topic write nms/v1/node/probe-server/monitor
+topic write nms/v1/node/probe-server/status
+topic write nms/v1/node/probe-server/telemetry
+topic write nms/v1/announce
+topic read nms/v1/node/probe-server/cmd
