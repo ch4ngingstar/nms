@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["duration_s"],
+  "additionalProperties": false,
+  "properties": {
+    "duration_s": { "type": "integer", "minimum": 1, "maximum": 300 },
+    "channels": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1, "maximum": 14 },
+      "uniqueItems": true
+    },
+    "passive": { "type": "boolean" }
+  }
+}

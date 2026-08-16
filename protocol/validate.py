@@ -8,6 +8,7 @@ from jsonschema import Draft202012Validator
 
 from protocol import MAX_PAYLOAD_BYTES
 from protocol.errors import ProtocolError
+from protocol.ports import parse_ports
 
 SCHEMA_DIR = Path(__file__).parent / "schemas"
 
@@ -46,7 +47,20 @@ def validate_envelope(message) -> dict:
 
 
 def validate_message(message) -> dict:
-    """Validate a full message: envelope, then its type-specific data."""
+    """Validate a full message: envelope, type-specific data, and command args."""
     validate_envelope(message)
-    _check(_validator(message["type"]), message["data"], f"{message['type']} data")
+    data = message["data"]
+    _check(_validator(message["type"]), data, f"{message['type']} data")
+
+    if message["type"] == "cmd":
+        _validate_command_args(data["cmd"], data.get("args", {}))
     return message
+
+
+def _validate_command_args(command: str, args: dict) -> None:
+    """Validate args against a per-command schema, if one exists."""
+    path = SCHEMA_DIR / "args" / f"{command}.schema.json"
+    if path.is_file():
+        _check(_validator(f"args/{command}"), args, f"{command} args")
+    if command == "port_scan":
+        parse_ports(args["ports"])
