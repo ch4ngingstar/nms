@@ -149,6 +149,34 @@ This survey buffer is distinct from the outbox and does not contradict §3's sin
 
 Chunking obeys the 1024-byte message cap unchanged. The only difference from a streamed job is *when* the chunks are published, not *how* (protocol §7.2).
 
+### 6.4 Techniques adopted from ESP32-Bit-Pirate
+
+Protocol spec §2.1 names ESP32-Bit-Pirate as design inspiration and obliges the project to cite it as a consulted reference. Its source was read for the read-only radio and network-recon patterns; the concrete mapping is:
+
+| Bit-Pirate command | Technique borrowed | Our command |
+|---|---|---|
+| `scan` | Active AP scan yielding BSSID, channel, RSSI, decoded auth, hidden/open flags | `wifi_survey` (AP list) |
+| `sniff` | Passive promiscuous capture, channel-hopping 1–13 | `wifi_survey` (client list) |
+| `discovery` | ICMP sweep across a local subnet to enumerate live hosts | `discover` |
+| `ping` | ICMP echo for reachability and latency | monitor `ping` check |
+| `nmap` | TCP connect scan reporting the **open / closed / filtered** trichotomy | `port_scan`, monitor `port` check |
+| `nc` | Raw TCP connect for reading what a service emits | `banner_grab` |
+| `lookup mac` | **OUI → vendor resolution** from a MAC's first three bytes | server-side enrichment (§6.5) |
+
+The near one-to-one correspondence is the point: the recon *primitives* are established prior art and the project does not claim them. What the project contributes is everything around them — the fleet, the protocol, the persistence, and the multi-vantage correlation — which Bit-Pirate, a single handheld tool, structurally cannot do.
+
+**Deliberately not adopted:** `deauth`, `spam`, `flood`, `repeater`, `spoof sta`/`spoof ap`. Every one transmits attack or forged frames, and protocol spec §11 places packet injection and deauthentication out of scope. For a security project this is a posture to state plainly, not a missing feature: the fleet **surveys and reports; it never transmits attack frames**. The firmware links no code path that sends a deauth, a forged beacon, or a spoofed association — the absence is structural, not a runtime toggle.
+
+Also not adopted: the interactive-console commands (`ssh`, `telnet`, `modbus`, `http analyze`, `webui`, `waterfall`). They serve a one-operator handheld tool; a headless fleet node reporting to a C2 server has no use for an on-device shell.
+
+### 6.5 OUI vendor enrichment
+
+`wifi_survey` reports raw BSSIDs and client MACs, exactly as the protocol already specifies. **Vendor resolution happens on the server, not the probe** — and the reason is the project's thesis in miniature. The IEEE OUI registry is tens of thousands of entries; holding it on an ESP32 with ~250 KB of heap is out of the question, but it is nothing to a server backed by SQLite. So the probe emits `a4:c1:f8:…`, and the server annotates it "Espressif" before it reaches the console.
+
+This turns the `GET /api/rf/aps` screen from a hex dump into readable intelligence — *"three probes see an Apple device and a Cisco AP, at these three signal strengths"* — which is precisely the multi-vantage question no single-device tool can answer.
+
+Placement: this is a **server/UI enhancement (subsystem 2/4), not firmware.** It requires no protocol change and no firmware change — the probe's contract is already correct. It is recorded here because studying Bit-Pirate is what surfaced it, and because the heap argument for pushing it server-side is the same argument that shapes this entire subsystem. It is a recommended follow-up, tracked in §11, and does not gate the firmware.
+
 ## 7. Memory discipline
 
 Protocol §7.5 permits one job at a time explicitly because an ESP32 running a scan with an open socket set plus JSON serialization has limited heap headroom. These rules are what make that constraint sufficient:
@@ -230,8 +258,9 @@ Client-station capture depends on traffic occurring during the sniff window. A q
 2. Native unit test suite (§9.1)
 3. Golden-corpus conformance tests in C++ (§9.2)
 4. Conformance suite retargeting: pytest options and external-broker support (§9.3)
-5. `NOTICE` — discharging the ESP32-Bit-Pirate attribution obligation required by protocol spec §2.1, which is currently unmet
+5. `NOTICE` — discharging the ESP32-Bit-Pirate attribution obligation required by protocol spec §2.1, which is currently unmet. It records what was borrowed (the read-only recon techniques mapped in §6.4) and what was deliberately not (the attack commands), so the citation is specific rather than a bare link.
 6. A flashing and provisioning runbook
+7. **Recommended follow-up, not gating this subsystem:** server-side OUI vendor enrichment (§6.5), landing in subsystem 2/4. Needs no firmware or protocol change.
 
 ## 12. Out of scope
 
