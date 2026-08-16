@@ -1,0 +1,18 @@
+# Mosquitto broker for the probe fleet (spec §12).
+#
+# Config is bound in from the repo so it is version-controlled infrastructure.
+# The passwd file (gitignored) is created in place by the enrolment commands
+# that POST /api/nodes prints, so the config mount is writable, not read-only.
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: nms-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./config/mosquitto:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+    restart: unless-stopped
+
+volumes:
+  mosquitto-data:

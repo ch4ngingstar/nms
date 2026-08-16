@@ -5,3 +5,10 @@ venv/
 .pytest_cache/
 instance/
 *.db
+
+# Broker password hashes: generated per deployment, never committed (spec §12).
+config/mosquitto/passwd
+
+# Junk files from shell commands with unescaped quote/backtick characters
+`
+'
