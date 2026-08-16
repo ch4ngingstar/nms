@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "result data (spec §7.3, §7.4)",
+  "type": "object",
+  "required": ["event", "job_id"],
+  "additionalProperties": false,
+  "properties": {
+    "event": { "enum": ["accepted", "chunk", "done", "error"] },
+    "job_id": { "type": "string", "minLength": 4, "maxLength": 32 },
+    "seq": { "type": "integer", "minimum": 0 },
+    "dropped": { "type": "integer", "minimum": 1 },
+    "chunks": { "type": "integer", "minimum": 0 },
+    "results": { "type": "integer", "minimum": 0 },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "code": {
+      "enum": ["busy", "unsupported", "bad_args", "unreachable",
+               "timeout", "oom", "cancelled", "radio_conflict"]
+    },
+    "message": { "type": "string" },
+    "open": { "type": "array", "items": { "type": "object" } },
+    "banners": { "type": "array", "items": { "type": "object" } },
+    "answers": { "type": "array", "items": { "type": "object" } },
+    "hops": { "type": "array", "items": { "type": "object" } },
+    "hosts": { "type": "array", "items": { "type": "object" } },
+    "aps": { "type": "array", "items": { "type": "object" } },
+    "clients": { "type": "array", "items": { "type": "object" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "event": { "const": "chunk" } }, "required": ["event"] },
+      "then": { "required": ["event", "job_id", "seq"] }
+    },
+    {
+      "if": { "properties": { "event": { "const": "done" } }, "required": ["event"] },
+      "then": { "required": ["event", "job_id", "chunks", "results", "duration_ms"] }
+    },
+    {
+      "if": { "properties": { "event": { "const": "error" } }, "required": ["event"] },
+      "then": { "required": ["event", "job_id", "code", "message"] }
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+{"v":1,"type":"monitor","node":"probe-server","msg_id":"01J8X2KC9012","ts":1755302400,
+ "data":{"cycle_ts":1755302400,"results":[{"id":2,"status":"down","latency_ms":5.0}]}}

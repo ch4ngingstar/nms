@@ -1,0 +1,10 @@
+# The golden corpus is a byte-identical contract shared between the Python
+# validator and the C++ firmware (spec §9). Line endings must not vary by
+# platform, so everything textual is pinned to LF in the working tree too.
+* text=auto eol=lf
+
+*.json text eol=lf
+*.py   text eol=lf
+*.md   text eol=lf
+
+*.db binary

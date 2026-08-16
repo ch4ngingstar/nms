@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "status data (spec §6.3, §6.4)",
+  "type": "object",
+  "required": ["state"],
+  "additionalProperties": false,
+  "properties": {
+    "state": {
+      "enum": ["unprovisioned", "connecting", "online", "busy", "surveying", "offline"]
+    },
+    "since": { "type": "integer", "minimum": 0 },
+    "job": { "type": ["string", "null"] },
+    "expect_back_in": { "type": "integer", "minimum": 1 },
+    "reason": { "type": "string" }
+  },
+  "if": {
+    "properties": { "state": { "const": "surveying" } },
+    "required": ["state"]
+  },
+  "then": { "required": ["state", "expect_back_in"] }
+}
