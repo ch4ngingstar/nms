@@ -1,0 +1,4 @@
+{"v":1,"type":"result","node":"probe-a4c1f8","msg_id":"01J8X2KB0006","ts":1755302460,
+ "data":{"event":"chunk","job_id":"job-7f3a93","seq":0,
+ "aps":[{"bssid":"a0:b7:65:11:22:33","ssid":"Home","channel":6,"rssi":-61,"auth":"wpa2","hidden":false}],
+ "clients":[{"mac":"de:ad:be:ef:00:01","bssid":"a0:b7:65:11:22:33","rssi":-70}]}}

@@ -1,0 +1,2 @@
+{"v":1,"type":"cmd","node":"probe-a4c1f8","msg_id":"01J8X2KA1234","ts":1755302400,
+ "data":{"job_id":"job-7f3a91","cmd":"port_scan","args":{"targets":["10.0.0.5"],"ports":"100-50"}}}
