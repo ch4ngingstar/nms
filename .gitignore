@@ -5,3 +5,7 @@ venv/
 .pytest_cache/
 instance/
 *.db
+
+# Junk files from shell commands with unescaped quote/backtick characters
+`
+'
