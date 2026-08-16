@@ -178,9 +178,10 @@ def test_clean_streamed_job_reaches_done(server):
     try:
         _wait_until(lambda: _node_exists(app, NODE))
         with app.app_context():
-            job = commands.create_job(NODE, "dns", {"targets": ["localhost"]})
-        state = _wait_until(lambda: _job_state(app, job.job_id) == "done")
-        assert state is True or _job_state(app, job.job_id) == "done"
+            # Read job_id inside the context: the ORM object detaches when the
+            # context (and its session) closes, so grab the plain string now.
+            job_id = commands.create_job(NODE, "dns", {"targets": ["localhost"]}).job_id
+        assert _wait_until(lambda: _job_state(app, job_id) == "done") is True
     finally:
         probe.stop_gracefully()
 
@@ -192,8 +193,14 @@ def test_sequence_gap_lands_incomplete(server):
     app, bridge = server
     host, port = bridge_addr(bridge)
     with app.app_context():
+        # Commit the node before the job: with only a bare ForeignKey column and
+        # no relationship() between them, SQLAlchemy's unit of work does not
+        # guarantee the parent insert precedes the child within one flush, so the
+        # job could be inserted first and trip the FK. Production never inserts
+        # both together — a node is always enrolled in an earlier transaction.
         _db.session.add(Node(node_id=NODE, capabilities=["port_scan"],
                              state="online"))
+        _db.session.commit()
         _db.session.add(Job(job_id="job-gap", node_id=NODE, cmd="port_scan",
                             args={}, state="accepted"))
         _db.session.commit()
