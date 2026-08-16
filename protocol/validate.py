@@ -43,3 +43,10 @@ def validate_envelope(message) -> dict:
         raise ProtocolError(f"message must be an object, got {type(message).__name__}")
     _check(_validator("envelope"), message, "envelope")
     return message
+
+
+def validate_message(message) -> dict:
+    """Validate a full message: envelope, then its type-specific data."""
+    validate_envelope(message)
+    _check(_validator(message["type"]), message["data"], f"{message['type']} data")
+    return message

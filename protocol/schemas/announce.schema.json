@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "announce data (spec §6.2)",
+  "type": "object",
+  "required": ["fw", "chip", "mac", "free_heap", "capabilities"],
+  "additionalProperties": false,
+  "properties": {
+    "label": { "type": "string", "maxLength": 64 },
+    "fw": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "chip": { "type": "string", "minLength": 1 },
+    "mac": { "type": "string", "pattern": "^([0-9a-f]{2}:){5}[0-9a-f]{2}$" },
+    "free_heap": { "type": "integer", "minimum": 0 },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    }
+  }
+}
