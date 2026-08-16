@@ -1845,7 +1845,7 @@ if __name__ == "__main__":
 - [ ] **Step 5: Run the tests to verify they pass**
 
 Run: `python -m pytest tests/test_credentials.py -v`
-Expected: PASS — 8 passed
+Expected: PASS — 7 passed
 
 - [ ] **Step 6: Verify the script end to end**
 
