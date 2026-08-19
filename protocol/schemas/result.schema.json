@@ -23,7 +23,10 @@
     "hops": { "type": "array", "items": { "type": "object" } },
     "hosts": { "type": "array", "items": { "type": "object" } },
     "aps": { "type": "array", "items": { "type": "object" } },
-    "clients": { "type": "array", "items": { "type": "object" } }
+    "clients": { "type": "array", "items": { "type": "object" } },
+    "devices": { "type": "array", "items": { "type": "object" } },
+    "alerts": { "type": "array", "items": { "type": "object" } },
+    "frame_stats": { "type": "object" }
   },
   "allOf": [
     {

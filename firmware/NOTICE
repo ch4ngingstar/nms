@@ -1,0 +1,92 @@
+NOTICE — third-party attribution for the NMS ESP32 firmware probe
+=================================================================
+
+This firmware discharges the attribution obligation in Probe Protocol v1 §2.1,
+which names ESP32-Bit-Pirate as a consulted design reference. Its source was read
+for read-only radio and network-recon patterns; the mapping below records exactly
+what was borrowed and what was deliberately not, so the citation is specific
+rather than a bare link (firmware spec §6.4, §9).
+
+
+ESP32-Bit-Pirate
+----------------
+  Project:  ESP32 Bit Pirate
+  Author:   geo-tp
+  Source:   https://github.com/geo-tp/ESP32-Bit-Pirate
+  License:  MIT (full text reproduced below)
+
+Techniques adopted (recon/radio primitives — established prior art, not claimed
+by this project; firmware spec §6.4):
+
+  Bit-Pirate command   Technique borrowed                          Our command
+  ------------------   -----------------------------------------   ------------------------
+  scan                 Active AP scan (BSSID, channel, RSSI,       wifi_survey (AP list)
+                       auth, hidden/open flags)
+  sniff                Passive promiscuous capture, channel-hop    wifi_survey (client list)
+  sniff (extended)     Promiscuous frame classification by         wifi_ids (passive IDS:
+                       type/subtype for security events            deauth-flood/rogue-AP/
+                                                                   evil-twin detection)
+  scan (BLE)           BLE device enumeration + AD payload parse   ble_scan
+  discovery            ICMP sweep of a local subnet                discover
+  ping                 ICMP echo for reachability/latency          monitor `ping` check
+  nmap                 TCP connect scan (open/closed/filtered)     port_scan, monitor `port`
+  nc                   Raw TCP connect to read a service banner    banner_grab
+  lookup mac           OUI -> vendor resolution                    server-side enrichment
+                                                                   (spec §6.5; NOT on-probe)
+
+Reference points read while implementing the radio runners (paths are in the
+upstream tree): BluetoothService.cpp (BLE enumeration) and WifiService.cpp
+(promiscuous capture / frame handling).
+
+The near one-to-one correspondence with the recon primitives is intentional: what
+this project contributes is everything around them — the fleet, the protocol, the
+persistence, and the multi-vantage correlation — which a single handheld tool
+structurally cannot do.
+
+Deliberately NOT adopted:
+
+  * The raw 802.11 deauthentication attack (Bit-Pirate `deauth` /
+    WifiService::deauthAttack, esp_wifi_80211_tx frame injection). Transmitting
+    deauth frames is a wireless denial-of-service affecting every client in RF
+    range, not an isolated bench. The `wifi_deauth` runner is NOT registered in
+    the worker dispatch table, is never advertised in `announce.capabilities`,
+    and cannot be dispatched by this firmware. See the standing decision recorded
+    in firmware/src/worker.cpp.
+  * The interactive-console commands (ssh, telnet, modbus, http analyze, webui,
+    waterfall). They serve a one-operator handheld tool; a headless fleet node
+    reporting to a C2 server has no on-device shell.
+
+---- ESP32-Bit-Pirate MIT License ----
+
+MIT License
+
+Copyright (c) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Also vendored / depended upon (via PlatformIO, see firmware/platformio.ini)
+---------------------------------------------------------------------------
+  * Arduino-ESP32 core + ESP-IDF ...... Apache-2.0 / LGPL-2.1 (Espressif)
+  * PubSubClient (knolleary) .......... MIT
+  * ArduinoJson (bblanchon) ........... MIT
+  * Unity (ThrowTheSwitch) ............ MIT  (native test framework)
+
+These are fetched by the build, not checked into this tree; their license texts
+ship with the respective packages.

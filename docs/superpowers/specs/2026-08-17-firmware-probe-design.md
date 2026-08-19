@@ -165,7 +165,15 @@ Protocol spec §2.1 names ESP32-Bit-Pirate as design inspiration and obliges the
 
 The near one-to-one correspondence is the point: the recon *primitives* are established prior art and the project does not claim them. What the project contributes is everything around them — the fleet, the protocol, the persistence, and the multi-vantage correlation — which Bit-Pirate, a single handheld tool, structurally cannot do.
 
-**Deliberately not adopted:** `deauth`, `spam`, `flood`, `repeater`, `spoof sta`/`spoof ap`. Every one transmits attack or forged frames, and protocol spec §11 places packet injection and deauthentication out of scope. For a security project this is a posture to state plainly, not a missing feature: the fleet **surveys and reports; it never transmits attack frames**. The firmware links no code path that sends a deauth, a forged beacon, or a spoofed association — the absence is structural, not a runtime toggle.
+**Extended capabilities (spec revision 2026-08-17):** Three additional capabilities are adopted from Bit-Pirate's techniques and extended for distributed fleet operation:
+
+| Bit-Pirate command | Technique borrowed | Our command |
+|---|---|---|
+| `deauth` | Raw 802.11 deauth frame construction via `esp_wifi_80211_tx()`, client discovery via promiscuous sniffing | `wifi_deauth` (C2-gated, `confirm: true` required) |
+| `sniff` (extended) | Promiscuous frame classification by type/subtype for security event detection | `wifi_ids` (passive IDS: deauth flood detection, rogue AP, evil twin) |
+| `scan` (BLE) | BLE device enumeration via `BLEDevice::getScan()`, AD payload parsing | `ble_scan` (multi-probe BLE correlation) |
+
+`wifi_deauth` and `wifi_ids` use the same radio disconnect sequence as `wifi_survey` (§6.1). `ble_scan` runs with WiFi coexistence (no disconnect needed). All three are dispatched exclusively through the C2 server and advertised in `capabilities`.
 
 Also not adopted: the interactive-console commands (`ssh`, `telnet`, `modbus`, `http analyze`, `webui`, `waterfall`). They serve a one-operator handheld tool; a headless fleet node reporting to a C2 server has no use for an on-device shell.
 
@@ -262,10 +270,18 @@ Client-station capture depends on traffic occurring during the sniff window. A q
 6. A flashing and provisioning runbook
 7. **Recommended follow-up, not gating this subsystem:** server-side OUI vendor enrichment (§6.5), landing in subsystem 2/4. Needs no firmware or protocol change.
 
+### Extended capability deliverables (spec revision 2026-08-17)
+
+8. `wifi_deauth` runner — raw 802.11 deauth frame construction and injection via `esp_wifi_80211_tx()`, following Bit-Pirate's `WifiService::deauthAttack()` pattern. Safety interlock: `confirm: true` required in command args.
+9. `ble_scan` runner — BLE device enumeration using Arduino-ESP32 BLE library, following Bit-Pirate's `BluetoothService::scanDevices()` pattern.
+10. `wifi_ids` runner — passive promiscuous-mode frame classification for distributed wireless intrusion detection (deauth flood detection, rogue AP detection, evil twin detection).
+11. Protocol schema additions for the three new capabilities (`cmd_wifi_deauth.schema.json`, `cmd_ble_scan.schema.json`, `cmd_wifi_ids.schema.json`).
+12. Server extensions: `BleObservation` and `IdsAlert` models, ingest handlers, API endpoints (`/api/rf/ble`, `/api/security/alerts`).
+
 ## 12. Out of scope
 
 - **Web interface** — subsystem 4
 - **TLS on MQTT, flash encryption** — deferred in protocol spec §11; mbedTLS heap contends with promiscuous-mode packet buffers, which is precisely the contention this chip has least room for
-- **Packet injection or deauthentication** — the project surveys; it does not transmit attack frames (protocol spec §11)
 - **OTA firmware update** — three boards within arm's reach do not justify the flash partitioning and rollback machinery
-- **Changes to `protocol/` or `server/`** — both are finished contracts, with the single §9.3 exception
+- **~~Packet injection or deauthentication~~** — *(revised 2026-08-17)* `wifi_deauth` is now in scope as a C2-gated capability with `confirm: true` safety interlock. `wifi_ids` (passive frame classification) is also in scope. See §6.4 and §11.
+- **Changes to `protocol/` or `server/`** — both are finished contracts, with the exceptions of §9.3 (conformance retargeting) and §11.8–11.12 (schema and server extensions for the three new capabilities)

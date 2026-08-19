@@ -12,6 +12,7 @@ def test_all_tables_created(db):
     assert names == {
         "nodes", "devices", "monitor_cycles", "monitor_results",
         "monitor_rollups", "jobs", "job_chunks", "telemetry", "ap_observations",
+        "ble_observations", "ids_alerts",
     }
 
 

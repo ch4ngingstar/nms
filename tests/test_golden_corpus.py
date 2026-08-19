@@ -25,3 +25,19 @@ def test_valid_fixtures_accepted(path):
 def test_invalid_fixtures_rejected(path):
     with pytest.raises(ProtocolError):
         validate_message(json.loads(path.read_text(encoding="utf-8")))
+
+
+# The parametrized test above already validates these, but assert their presence
+# explicitly so a deleted Phase-4 fixture fails loudly rather than silently
+# shrinking the corpus (spec §6.4).
+PHASE4_FIXTURES = [
+    "cmd_ble_scan", "cmd_wifi_ids", "result_chunk_ble_scan",
+    "result_chunk_ids_alert", "result_chunk_frame_stats",
+]
+
+
+@pytest.mark.parametrize("stem", PHASE4_FIXTURES)
+def test_phase4_fixture_present_and_valid(stem):
+    path = GOLDEN / "valid" / f"{stem}.json"
+    assert path.is_file(), f"missing golden fixture {stem}"
+    validate_message(json.loads(path.read_text(encoding="utf-8")))

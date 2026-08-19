@@ -4,6 +4,24 @@ from flask import Flask
 from server.db import db as _db
 
 
+def pytest_addoption(parser):
+    """Retarget the conformance suite (tests/test_conformance.py) at hardware.
+
+    With the defaults the suite runs unchanged against the in-process virtual
+    probe on a throwaway Docker broker. Point --node-id at a real probe (and
+    --broker-host/--broker-port at its broker) to run the same scenarios against
+    firmware on a physical node instead — see test_conformance.py for how each
+    scenario adapts. These options are inert for every other test module.
+    """
+    group = parser.getgroup("conformance")
+    group.addoption("--node-id", action="store", default="probe-server",
+                    help="node to test; non-default switches to hardware mode")
+    group.addoption("--broker-host", action="store", default="localhost",
+                    help="broker host in hardware mode (default localhost)")
+    group.addoption("--broker-port", action="store", default=None, type=int,
+                    help="broker port in hardware mode (default auto: 1883)")
+
+
 @pytest.fixture
 def app():
     application = Flask(__name__)

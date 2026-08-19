@@ -1,0 +1,6 @@
+{"v":1,"type":"result","node":"probe-a4c1f8","msg_id":"01J8X2KB0008","ts":1755302400,
+ "data":{"event":"chunk","job_id":"job-7f3a98","seq":0,
+ "alerts":[{"type":"deauth_flood","source_mac":"de:ad:be:ef:00:11",
+ "target_mac":"a0:b7:65:11:22:33","channel":6,"count":142,
+ "first_seen":1755302390,"last_seen":1755302400},
+ {"type":"rogue_ap","bssid":"66:77:88:99:aa:bb","ssid":"Home","channel":11,"rssi":-49}]}}

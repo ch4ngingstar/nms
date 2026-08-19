@@ -3,7 +3,8 @@ from werkzeug.security import generate_password_hash
 
 from server.db import db as _db
 from server.models import (
-    ApObservation, Device, Job, JobChunk, Node, Telemetry,
+    ApObservation, BleObservation, Device, IdsAlert, Job, JobChunk, Node,
+    Telemetry,
 )
 
 PW = "correct horse battery staple"
@@ -211,3 +212,95 @@ def test_rf_aps_group_by_bssid(auth_client, api_app):
     assert body[0]["bssid"] == "a0:b7:65:11:22:33"
     assert body[0]["observations"][0]["node"] == "probe-a4c1f8"
     assert body[0]["observations"][0]["rssi"] == -61
+
+
+def test_rf_ble_group_by_mac(auth_client, api_app):
+    from datetime import datetime, timezone
+    with api_app.app_context():
+        _db.session.add(Job(job_id="job-ble", node_id="probe-a4c1f8",
+                            cmd="ble_scan", args={}, state="done"))
+        _db.session.commit()
+        _db.session.add(BleObservation(
+            node_id="probe-a4c1f8", job_id="job-ble", mac="4c:11:ae:1a:2b:3c",
+            name="Mi Band", rssi=-72, connectable=True, manufacturer="0157",
+            observed_at=datetime(2026, 8, 16, tzinfo=timezone.utc)))
+        _db.session.commit()
+    body = auth_client.get("/api/rf/ble").get_json()
+    assert body[0]["mac"] == "4c:11:ae:1a:2b:3c"
+    assert body[0]["name"] == "Mi Band"
+    assert body[0]["manufacturer"] == "0157"
+    assert body[0]["observations"][0]["node"] == "probe-a4c1f8"
+    assert body[0]["observations"][0]["rssi"] == -72
+
+
+# --- security --------------------------------------------------------------
+
+def _seed_alerts(api_app):
+    from datetime import datetime, timezone
+    with api_app.app_context():
+        _db.session.add(Job(job_id="job-ids", node_id="probe-a4c1f8",
+                            cmd="wifi_ids", args={}, state="done"))
+        _db.session.commit()
+        base = datetime(2026, 8, 16, tzinfo=timezone.utc)
+        _db.session.add_all([
+            IdsAlert(node_id="probe-a4c1f8", job_id="job-ids",
+                     alert_type="deauth_flood", source_mac="de:ad:be:ef:00:11",
+                     target_mac="a0:b7:65:11:22:33", channel=6, count=142,
+                     detected_at=base),
+            IdsAlert(node_id="probe-a4c1f8", job_id="job-ids",
+                     alert_type="rogue_ap", source_mac="66:77:88:99:aa:bb",
+                     channel=11, detected_at=base),
+            IdsAlert(node_id="probe-a4c1f8", job_id="job-ids",
+                     alert_type="evil_twin", source_mac="12:34:56:78:9a:bc",
+                     channel=1, detected_at=base),
+        ])
+        _db.session.commit()
+
+
+def test_security_alerts_timeline(auth_client, api_app):
+    _seed_alerts(api_app)
+    body = auth_client.get("/api/security/alerts").get_json()
+    assert len(body) == 3
+    assert {a["alert_type"] for a in body} == {"deauth_flood", "rogue_ap", "evil_twin"}
+    flood = next(a for a in body if a["alert_type"] == "deauth_flood")
+    assert flood["count"] == 142
+    assert flood["node_id"] == "probe-a4c1f8"
+
+
+def test_security_alerts_type_filter(auth_client, api_app):
+    _seed_alerts(api_app)
+    body = auth_client.get("/api/security/alerts?type=deauth_flood").get_json()
+    assert len(body) == 1
+    assert body[0]["alert_type"] == "deauth_flood"
+
+
+def test_security_rogue_aps_filters_to_ap_identity_alerts(auth_client, api_app):
+    _seed_alerts(api_app)
+    body = auth_client.get("/api/security/rogue-aps").get_json()
+    assert {a["alert_type"] for a in body} == {"rogue_ap", "evil_twin"}
+
+
+def test_rf_and_security_require_auth(client):
+    assert client.get("/api/rf/ble").status_code == 401
+    assert client.get("/api/security/alerts").status_code == 401
+    assert client.get("/api/security/rogue-aps").status_code == 401
+
+
+# --- dispatch of the phase-4 recon commands --------------------------------
+
+def test_issue_ble_scan_job_when_advertised(auth_client, api_app):
+    with api_app.app_context():
+        node = _db.session.get(Node, "probe-a4c1f8")
+        node.capabilities = ["port_scan", "wifi_survey", "ble_scan"]
+        _db.session.commit()
+    response = auth_client.post("/api/nodes/probe-a4c1f8/jobs",
+                                json={"cmd": "ble_scan", "args": {"duration_s": 5}})
+    assert response.status_code == 202
+    assert response.get_json()["job_id"].startswith("job-")
+
+
+def test_issue_wifi_ids_job_uncapable_is_400(auth_client):
+    # The seeded node advertises port_scan/wifi_survey only.
+    response = auth_client.post("/api/nodes/probe-a4c1f8/jobs",
+                                json={"cmd": "wifi_ids", "args": {"duration_s": 60}})
+    assert response.status_code == 400

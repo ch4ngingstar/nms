@@ -13,8 +13,8 @@ from protocol.errors import ProtocolError
 from server import auth, commands, enrolment
 from server.db import db
 from server.models import (
-    ApObservation, Device, Job, JobChunk, MonitorCycle, MonitorResult,
-    MonitorRollup, Node, Telemetry,
+    ApObservation, BleObservation, Device, IdsAlert, Job, JobChunk,
+    MonitorCycle, MonitorResult, MonitorRollup, Node, Telemetry,
 )
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -253,6 +253,66 @@ def rf_aps():
                                        "channel": obs.channel,
                                        "observed_at": _iso(obs.observed_at)})
     return jsonify(list(grouped.values()))
+
+
+@api.get("/rf/ble")
+@auth.require_auth
+def rf_ble():
+    """BLE devices the fleet sees, with signal strength per probe (spec §6.2).
+
+    The ble_scan mirror of /rf/aps: one row per device MAC, its per-node RSSI
+    observations nested underneath for the multi-vantage correlation view.
+    """
+    observations = db.session.execute(
+        db.select(BleObservation).order_by(BleObservation.observed_at.desc())
+    ).scalars().all()
+    grouped: dict[str, dict] = {}
+    for obs in observations:
+        entry = grouped.setdefault(obs.mac, {
+            "mac": obs.mac, "name": obs.name, "manufacturer": obs.manufacturer,
+            "connectable": obs.connectable, "observations": []})
+        entry["observations"].append({"node": obs.node_id, "rssi": obs.rssi,
+                                      "observed_at": _iso(obs.observed_at)})
+    return jsonify(list(grouped.values()))
+
+
+# --- security --------------------------------------------------------------
+
+def _alert_dict(alert: IdsAlert) -> dict:
+    return {"id": alert.id, "node_id": alert.node_id, "job_id": alert.job_id,
+            "alert_type": alert.alert_type, "source_mac": alert.source_mac,
+            "target_mac": alert.target_mac, "channel": alert.channel,
+            "count": alert.count, "detected_at": _iso(alert.detected_at)}
+
+
+@api.get("/security/alerts")
+@auth.require_auth
+def security_alerts():
+    """Wireless IDS alert timeline, newest first (spec §6.4).
+
+    Optional ?type= filter narrows to one alert_type; ?node= to one probe.
+    """
+    query = db.select(IdsAlert).order_by(IdsAlert.detected_at.desc())
+    alert_type = request.args.get("type")
+    if alert_type:
+        query = query.where(IdsAlert.alert_type == alert_type)
+    node_id = request.args.get("node")
+    if node_id:
+        query = query.where(IdsAlert.node_id == node_id)
+    alerts = db.session.execute(query).scalars().all()
+    return jsonify([_alert_dict(alert) for alert in alerts])
+
+
+@api.get("/security/rogue-aps")
+@auth.require_auth
+def security_rogue_aps():
+    """The rogue_ap / evil_twin subset of IDS alerts — unexpected APs (spec §6.4)."""
+    alerts = db.session.execute(
+        db.select(IdsAlert)
+        .where(IdsAlert.alert_type.in_(("rogue_ap", "evil_twin")))
+        .order_by(IdsAlert.detected_at.desc())
+    ).scalars().all()
+    return jsonify([_alert_dict(alert) for alert in alerts])
 
 
 # --- helpers ---------------------------------------------------------------

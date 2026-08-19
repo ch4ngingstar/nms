@@ -185,3 +185,75 @@ class ApObservation(db.Model):
     __table_args__ = (
         db.Index("ix_ap_bssid_time", "bssid", "observed_at"),
     )
+
+
+class BleObservation(db.Model):
+    """A BLE device seen by one probe during a ble_scan job (spec §6.2).
+
+    The ble_scan analogue of ap_observations: the same multi-vantage question —
+    GROUP BY mac comparing rssi across node_id — is what justifies a typed table
+    rather than leaving the data buried in job_chunks payloads.
+    """
+
+    __tablename__ = "ble_observations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    job_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("jobs.job_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    mac = db.Column(db.String(17), nullable=False)
+    name = db.Column(db.String(64))
+    rssi = db.Column(db.Integer)
+    connectable = db.Column(db.Boolean, default=False)
+    # BT company identifier as reported by the probe (4-hex, e.g. "004C"); the
+    # probe emits the raw id and the server resolves the vendor name (spec §6.5).
+    manufacturer = db.Column(db.String(16))
+    observed_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                            default=_utcnow, index=True)
+
+    __table_args__ = (
+        db.Index("ix_ble_mac_time", "mac", "observed_at"),
+    )
+
+
+class IdsAlert(db.Model):
+    """A wireless intrusion-detection alert projected from a wifi_ids job.
+
+    wifi_ids emits heterogeneous alert objects (deauth_flood / rogue_ap /
+    evil_twin); this table flattens them to a common shape so the security
+    timeline and the rogue-AP view are plain queries. `count` is meaningful only
+    for deauth floods; `target_mac` only for a flood's victim — both are null for
+    the AP-identity alerts, whose subject MAC lands in `source_mac`.
+    """
+
+    __tablename__ = "ids_alerts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    job_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("jobs.job_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    alert_type = db.Column(db.String(24), nullable=False, index=True)
+    source_mac = db.Column(db.String(17))
+    target_mac = db.Column(db.String(17))
+    channel = db.Column(db.Integer)
+    count = db.Column(db.Integer)
+    detected_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                            default=_utcnow, index=True)
+
+    __table_args__ = (
+        db.Index("ix_ids_type_time", "alert_type", "detected_at"),
+    )

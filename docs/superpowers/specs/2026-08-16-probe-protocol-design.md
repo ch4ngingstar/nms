@@ -40,7 +40,9 @@ What this project contributes is the distributed system built around that capabi
 
 **Borrowed:** the console-plus-modes interaction pattern, web CLI over Wi-Fi, and the ESP32-S3 / PlatformIO / C++ platform choice.
 
-**Deliberately not adopted:** the 24 hardware protocol modes (out of scope), and **deauthentication or any packet injection** — see §11.
+**Deliberately not adopted:** the 24 hardware protocol modes (out of scope).
+
+**Extended capabilities (spec revision 2026-08-17):** three additional capabilities — `wifi_deauth`, `ble_scan`, and `wifi_ids` — extend the recon-only baseline. `wifi_deauth` uses `esp_wifi_80211_tx()` for controlled deauthentication testing, gated by a mandatory `confirm: true` argument. `wifi_ids` uses promiscuous-mode frame classification for intrusion detection (deauth flood detection, rogue AP detection, evil twin detection) — passive and read-only. `ble_scan` uses the ESP32 BLE radio for device enumeration. All three are dispatched exclusively through the C2 server's command pipeline and follow the same radio disconnect sequence as `wifi_survey`.
 
 **Attribution obligation.** Bit-Pirate's source may be read as a reference for ESP-IDF radio patterns (`esp_wifi_scan`, promiscuous-mode callbacks), but all firmware in this project is written independently. The project must be cited as inspiration and as a consulted reference in the final report, and in a source-tree `NOTICE` or `CREDITS` file.
 
@@ -399,4 +401,4 @@ Deferred deliberately, with reasons:
 - **Automatic enrollment** — see §8.1.
 - **Server storage schema, REST/SSE API, UI** — subsystems 2 and 4.
 - **Firmware internals** (radio scheduler, portal implementation) — subsystem 3.
-- **Packet injection or deauthentication** — the project surveys; it does not transmit attack frames.
+- **~~Packet injection or deauthentication~~** — *(revised 2026-08-17)* the `wifi_deauth` capability is now in scope as a C2-gated, confirm-required security testing command. The `wifi_ids` capability (passive frame classification for intrusion detection) is also in scope. Both use standard ESP-IDF APIs (`esp_wifi_80211_tx`, `esp_wifi_set_promiscuous`). See firmware spec §6.4.

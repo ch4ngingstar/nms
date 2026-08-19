@@ -22,6 +22,15 @@ from server.models import Job, Node
 # spec §6.2). Recon commands must appear in the node's capabilities.
 CONTROL_COMMANDS = {"set_monitor", "cancel", "identify", "reboot", "get_config"}
 
+# Every recon command the protocol defines. A node still only runs the subset it
+# advertises in `announce.capabilities`; this set just separates "unknown command"
+# from "known command this node did not advertise" for a clearer rejection.
+# ble_scan and wifi_ids are the Phase-4 radio additions (spec §6.4).
+RECON_COMMANDS = frozenset({
+    "port_scan", "banner_grab", "dns", "trace", "discover",
+    "wifi_survey", "ble_scan", "wifi_ids",
+})
+
 
 class CommandError(ValueError):
     """A command request that cannot be dispatched as asked."""
@@ -69,9 +78,12 @@ def create_job(node_id: str, cmd: str, args: dict | None = None) -> Job:
     node = db.session.get(Node, node_id)
     if node is None:
         raise UnknownNode(f"no node {node_id!r} is enrolled")
-    if cmd not in CONTROL_COMMANDS and cmd not in (node.capabilities or []):
-        raise CapabilityError(
-            f"node {node_id!r} does not advertise capability {cmd!r}")
+    if cmd not in CONTROL_COMMANDS:
+        if cmd not in RECON_COMMANDS:
+            raise CapabilityError(f"unknown command {cmd!r}")
+        if cmd not in (node.capabilities or []):
+            raise CapabilityError(
+                f"node {node_id!r} does not advertise capability {cmd!r}")
 
     job_id = _new_job_id()
     data = {"job_id": job_id, "cmd": cmd, "args": args}

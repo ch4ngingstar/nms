@@ -11,8 +11,8 @@ from protocol.job import JobState, JobTracker
 from server.db import db
 from server.events import bus
 from server.models import (
-    ApObservation, Device, Job, JobChunk, MonitorCycle, MonitorResult,
-    Node, Telemetry,
+    ApObservation, BleObservation, Device, IdsAlert, Job, JobChunk,
+    MonitorCycle, MonitorResult, Node, Telemetry,
 )
 
 
@@ -163,6 +163,41 @@ def _project_ap_observations(job: Job, data: dict, observed_at) -> None:
         ))
 
 
+def _project_ble_observations(job: Job, data: dict, observed_at) -> None:
+    """Explode a ble_scan chunk into the queryable observations table.
+
+    The ble_scan analogue of _project_ap_observations: multi-vantage RSSI per
+    device MAC is the query a single handheld tool cannot answer (spec §6.2).
+    """
+    for device in data.get("devices", []):
+        db.session.add(BleObservation(
+            node_id=job.node_id, job_id=job.job_id,
+            mac=device["mac"], name=device.get("name"),
+            rssi=device.get("rssi"), connectable=device.get("connectable", False),
+            manufacturer=device.get("manufacturer"),
+            observed_at=observed_at,
+        ))
+
+
+def _project_ids_alerts(job: Job, data: dict, detected_at) -> None:
+    """Flatten a wifi_ids `alerts` chunk into the typed alert table.
+
+    The alert objects differ by type: a deauth_flood carries source_mac/
+    target_mac/count, while rogue_ap and evil_twin name the offending AP in
+    `bssid` and carry no victim or count. Both AP-identity kinds land their MAC
+    in source_mac so the timeline is uniform (spec §6.4).
+    """
+    for alert in data.get("alerts", []):
+        db.session.add(IdsAlert(
+            node_id=job.node_id, job_id=job.job_id,
+            alert_type=alert["type"],
+            source_mac=alert.get("source_mac") or alert.get("bssid"),
+            target_mac=alert.get("target_mac"),
+            channel=alert.get("channel"), count=alert.get("count"),
+            detected_at=detected_at,
+        ))
+
+
 def _store_chunk(job: Job, data: dict, received_at) -> None:
     seq = data["seq"]
     already = db.session.execute(
@@ -172,8 +207,15 @@ def _store_chunk(job: Job, data: dict, received_at) -> None:
         return                     # QoS 1 redelivery
     db.session.add(JobChunk(job_id=job.job_id, seq=seq, payload=data,
                             received_at=received_at))
-    if job.cmd == "wifi_survey":
+    # Projections key on the chunk's payload shape, not the command name: only
+    # wifi_survey emits `aps`, only ble_scan `devices`, only wifi_ids `alerts`
+    # (its terminal `frame_stats` chunk carries none and is simply stored raw).
+    if "aps" in data:
         _project_ap_observations(job, data, received_at)
+    if "devices" in data:
+        _project_ble_observations(job, data, received_at)
+    if "alerts" in data:
+        _project_ids_alerts(job, data, received_at)
 
 
 def handle_result(message: dict):
