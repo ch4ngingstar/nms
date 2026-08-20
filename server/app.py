@@ -1,11 +1,12 @@
-"""Application factory: wiring only (spec §5).
+"""Application factory: wiring only.
 
 The server must run as a single process — SSE fan-out is in-memory, so multiple
-workers would each hold a separate event bus (spec §4). Do not deploy under
-Gunicorn with more than one worker without replacing events.py.
+workers would each hold a separate event bus. Do not deploy under Gunicorn with
+more than one worker without replacing events.py.
 """
 
 import os
+from pathlib import Path
 
 from flask import Flask
 
@@ -14,10 +15,14 @@ from server.db import db
 from server.stream import stream
 from server.ui import ui
 
+# Repo-root static/, not server/static — the console's CSS/JS ship beside
+# templates/index.html at the top level (see server/ui.py).
+_STATIC = Path(__file__).resolve().parent.parent / "static"
+
 
 def create_app(config: dict | None = None) -> Flask:
-    """Build the Flask app. Refuses to start without a SECRET_KEY (spec §11)."""
-    app = Flask(__name__)
+    """Build the Flask app. Refuses to start without a SECRET_KEY."""
+    app = Flask(__name__, static_folder=str(_STATIC), static_url_path="/static")
     app.config.update(
         SQLALCHEMY_DATABASE_URI=os.environ.get(
             "NMS_DATABASE_URI", "sqlite:///nms.db"),
@@ -27,7 +32,7 @@ def create_app(config: dict | None = None) -> Flask:
     if config:
         app.config.update(config)
 
-    # A default key must never reach a deployment (spec §11).
+    # A default key must never reach a deployment.
     if not app.config.get("SECRET_KEY"):
         raise RuntimeError(
             "SECRET_KEY is not set; refusing to start with an insecure default")

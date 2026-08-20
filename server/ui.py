@@ -1,10 +1,12 @@
-"""Static delivery of the operations console (spec §10).
+"""Static delivery of the operations console.
 
-The console is a single self-contained page under templates/ that talks to the
-REST + SSE API on the same origin. Serving it from the app keeps everything
-one process, one origin — no CORS, and the browser session cookie authenticates
-the API and the SSE stream alike. The page falls back to a self-contained demo
-when the API is unauthenticated, so the route is useful before login too.
+The page itself is served here; its CSS/JS ship under the app's static folder
+(wired to the repo-root static/ in server/app.py, not Flask's server/static
+default) and are served by Flask's normal static handling. Serving everything
+from the app keeps it one process, one origin — no CORS, and the browser
+session cookie authenticates the API and the SSE stream alike. The page falls
+back to a self-contained demo when the API is unauthenticated, so the route
+is useful before login too.
 """
 
 from pathlib import Path
