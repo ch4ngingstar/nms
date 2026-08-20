@@ -40,3 +40,12 @@ Thumbs.db
 # Junk files from shell commands with unescaped quote/backtick characters
 `
 '
+# Zero-byte artifacts left when an external tool echoes edited/command content
+# through a shell and a '>' in the content is taken as a redirect (the token
+# after it becomes an empty file). Only shell-metacharacter names are matched —
+# they never occur in real source here; identifier-like stragglers can't be
+# pattern-matched safely, so stage changes explicitly rather than `git add -A`.
+*(*
+*)*
+*{*
+*}*
