@@ -1,3 +1,6 @@
+# The golden corpus is a byte-identical contract shared between the Python
+# validator and the C++ firmware (spec §9). Line endings must not vary by
+# platform, so everything textual is pinned to LF in the working tree too.
 * text=auto eol=lf
 
 *.json text eol=lf
@@ -5,3 +8,7 @@
 *.md   text eol=lf
 
 *.db binary
+
+# Linguist can't tell C from C++ by extension alone and defaults .h to C;
+# these headers belong to the C++ firmware.
+firmware/**/*.h linguist-language=C++
