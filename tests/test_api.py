@@ -3,8 +3,8 @@ from werkzeug.security import generate_password_hash
 
 from server.db import db as _db
 from server.models import (
-    ApObservation, BleObservation, Device, IdsAlert, Job, JobChunk, Node,
-    Telemetry,
+    ApObservation, BleObservation, CarrierObservation, Device, IdsAlert, Job,
+    JobChunk, Node, Telemetry,
 )
 
 PW = "correct horse battery staple"
@@ -233,6 +233,37 @@ def test_rf_ble_group_by_mac(auth_client, api_app):
     assert body[0]["observations"][0]["rssi"] == -72
 
 
+def test_rf_carriers_group_by_freq(auth_client, api_app):
+    """Two probes seeing the same 433.92 MHz carrier collapse to one row with
+    both vantages nested — the triangulation view rf_sniff exists for."""
+    from datetime import datetime, timezone
+    with api_app.app_context():
+        _db.session.add(Job(job_id="job-rf", node_id="probe-a4c1f8",
+                            cmd="rf_sniff", args={}, state="done"))
+        _db.session.add(Node(node_id="probe-7f21c3", capabilities=["rf_sniff"],
+                             state="online"))
+        _db.session.commit()
+        _db.session.add(Job(job_id="job-rf2", node_id="probe-7f21c3",
+                            cmd="rf_sniff", args={}, state="done"))
+        _db.session.commit()
+        base = datetime(2026, 8, 16, tzinfo=timezone.utc)
+        _db.session.add_all([
+            CarrierObservation(node_id="probe-a4c1f8", job_id="job-rf",
+                               freq_mhz=433.92, rssi=-58, bandwidth_khz=58,
+                               packets=14, observed_at=base),
+            CarrierObservation(node_id="probe-7f21c3", job_id="job-rf2",
+                               freq_mhz=433.92, rssi=-71, bandwidth_khz=58,
+                               packets=9, observed_at=base),
+        ])
+        _db.session.commit()
+    body = auth_client.get("/api/rf/carriers").get_json()
+    assert len(body) == 1                       # one frequency row
+    assert body[0]["freq_mhz"] == 433.92
+    assert body[0]["bandwidth_khz"] == 58
+    nodes = {o["node"] for o in body[0]["observations"]}
+    assert nodes == {"probe-a4c1f8", "probe-7f21c3"}
+
+
 # --- security --------------------------------------------------------------
 
 def _seed_alerts(api_app):
@@ -282,6 +313,7 @@ def test_security_rogue_aps_filters_to_ap_identity_alerts(auth_client, api_app):
 
 def test_rf_and_security_require_auth(client):
     assert client.get("/api/rf/ble").status_code == 401
+    assert client.get("/api/rf/carriers").status_code == 401
     assert client.get("/api/security/alerts").status_code == 401
     assert client.get("/api/security/rogue-aps").status_code == 401
 

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "rf_sniff args (RF-Sentinel, sub-GHz carrier telemetry)",
+  "type": "object",
+  "required": ["freq_min_mhz", "freq_max_mhz"],
+  "additionalProperties": false,
+  "properties": {
+    "freq_min_mhz": { "type": "number", "minimum": 300, "maximum": 928 },
+    "freq_max_mhz": { "type": "number", "minimum": 300, "maximum": 928 },
+    "duration_s": { "type": "integer", "minimum": 1, "maximum": 60 },
+    "gain": { "type": "integer", "minimum": 0, "maximum": 64 }
+  }
+}

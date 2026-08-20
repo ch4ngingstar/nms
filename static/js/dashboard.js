@@ -3,7 +3,7 @@
    DEMO  — a simulator emitting frames shaped like the real SSE so the console
            is populated on a projector with nothing else running. */
 
-const state = { nodes:{}, jobs:{}, aps:{}, ble:{}, alerts:[], frames:0 };
+const state = { nodes:{}, jobs:{}, aps:{}, carriers:{}, ble:{}, alerts:[], frames:0 };
 let paused = false, live = false;
 
 const $ = s => document.querySelector(s);
@@ -85,7 +85,7 @@ function renderStats(){
   $('#s-frames').textContent=state.frames.toLocaleString();
   $('#b-fleet').textContent=nodes.length;
   $('#b-jobs').textContent=Object.keys(state.jobs).length;
-  $('#b-rf').textContent=Object.keys(state.aps).length+Object.keys(state.ble).length;
+  $('#b-rf').textContent=Object.keys(state.aps).length+Object.keys(state.carriers).length+Object.keys(state.ble).length;
   $('#b-sec').textContent=state.alerts.length;
 }
 function renderNodes(){
@@ -142,6 +142,17 @@ function renderRF(){
       `<span class="bssid">${esc(ap.bssid)}</span>`+
       `<span class="ch">Channel ${ap.observations[0]?.channel??'—'}</span></div>${vans}</div>`;
   }).join(''):'<div class="empty">No access points observed.</div>';
+
+  const cwrap=$('#carriers'); const carriers=Object.values(state.carriers).sort((a,b)=>a.freq_mhz-b.freq_mhz);
+  cwrap.innerHTML = carriers.length? carriers.map(c=>{
+    const vans=c.observations.map(o=>
+      `<div class="van"><span class="n">${esc(o.node)}</span>`+
+      `<span class="track"><span class="fill" style="width:${rssiPct(o.rssi)}%"></span></span>`+
+      `<span class="v">${o.rssi} dBm${o.packets!=null?(' · '+o.packets+' pkt'):''}</span></div>`).join('');
+    return `<div class="ap"><div class="h"><span class="ssid">${c.freq_mhz.toFixed(2)} MHz</span>`+
+      `<span class="bssid">sub-GHz</span>`+
+      `<span class="ch">${c.bandwidth_khz!=null?(c.bandwidth_khz+' kHz'):'—'}</span></div>${vans}</div>`;
+  }).join(''):'<div class="empty">No sub-GHz carriers observed.</div>';
 
   const tb=$('#ble'); const bles=Object.values(state.ble);
   tb.innerHTML = bles.length? bles.map(b=>{
@@ -202,6 +213,7 @@ function goLive(){
   const j=(p)=>fetch(p,{credentials:'same-origin'}).then(r=>r.ok?r.json():[]).catch(()=>[]);
   j('/api/nodes').then(ns=>ns.forEach(n=>{state.nodes[n.node_id]=Object.assign(state.nodes[n.node_id]||{},n,{last_seen:Date.parse(n.last_seen)||Date.now()});renderNodes();renderStats();}));
   j('/api/rf/aps').then(a=>{a.forEach(x=>state.aps[x.bssid]=x);renderRF();renderStats();});
+  j('/api/rf/carriers').then(c=>{c.forEach(x=>state.carriers[x.freq_mhz.toFixed(2)]=x);renderRF();renderStats();});
   j('/api/rf/ble').then(b=>{b.forEach(x=>state.ble[x.mac]=x);renderRF();renderStats();});
   j('/api/security/alerts').then(al=>{state.alerts=al.map(x=>Object.assign(x,{detected_at:Date.parse(x.detected_at)||Date.now()}));renderAlerts();renderStats();});
   const es=new EventSource('/api/stream');
@@ -217,7 +229,7 @@ function goDemo(){
   setConn(false);
   onNodeStatus({node:'probe-a4c1f8',state:'online',label:'lab-bench',capabilities:['ble_scan','wifi_ids','wifi_survey','port_scan','dns']});
   onNodeStatus({node:'probe-server',state:'online',label:'virtual peer',capabilities:['port_scan','banner','dns','discover','wifi_survey']});
-  onNodeStatus({node:'probe-7f21c3',state:'online',label:'roof-north',capabilities:['ble_scan','wifi_ids','wifi_survey']});
+  onNodeStatus({node:'probe-7f21c3',state:'online',label:'roof-north',capabilities:['ble_scan','wifi_ids','wifi_survey','rf_sniff']});
   state.aps={
     'a4:c1:38:2b:70:0f':{bssid:'a4:c1:38:2b:70:0f',ssid:'CANDELA-5G',observations:[
       {node:'probe-a4c1f8',rssi:-38,channel:36},{node:'probe-7f21c3',rssi:-61,channel:36}]},
@@ -225,6 +237,13 @@ function goDemo(){
       {node:'probe-a4c1f8',rssi:-54,channel:6},{node:'probe-7f21c3',rssi:-49,channel:6}]},
     '3c:84:6a:d2:9a:aa':{bssid:'3c:84:6a:d2:9a:aa',ssid:'',observations:[
       {node:'probe-7f21c3',rssi:-77,channel:11}]}};
+  state.carriers={
+    '433.92':{freq_mhz:433.92,bandwidth_khz:58,observations:[
+      {node:'probe-a4c1f8',rssi:-58,packets:14},{node:'probe-7f21c3',rssi:-71,packets:9}]},
+    '434.42':{freq_mhz:434.42,bandwidth_khz:58,observations:[
+      {node:'probe-7f21c3',rssi:-88,packets:2}]},
+    '868.30':{freq_mhz:868.30,bandwidth_khz:120,observations:[
+      {node:'probe-a4c1f8',rssi:-74,packets:5}]}};
   state.ble={
     'ff:22:19:8a:0c:d1':{mac:'ff:22:19:8a:0c:d1',name:'Mi Band 7',manufacturer:'Xiaomi',connectable:true,
       observations:[{node:'probe-a4c1f8',rssi:-52},{node:'probe-7f21c3',rssi:-70}]},
@@ -254,6 +273,8 @@ function goDemo(){
     ()=>onJobEvent({job_id:rid(),node:'probe-server',cmd:'dns',event:'created',state:'pending'}),
     ()=>bump('done',{chunks:1,duration_ms:88}),
     ()=>onAlert({node_id:'probe-7f21c3',alert_type:'rogue_ap',source_mac:'6a:1f:00:88:31:0c',channel:11}),
+    ()=>onJobEvent({job_id:rid(),node:'probe-7f21c3',cmd:'rf_sniff',event:'created',state:'pending'}),
+    ()=>bump('done',{chunks:4,duration_ms:1030}),
   ];
   let i=0;
   (function tick(){ script[i%script.length](); state.frames++; renderStats(); i++;

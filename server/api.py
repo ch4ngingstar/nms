@@ -13,8 +13,8 @@ from protocol.errors import ProtocolError
 from server import auth, commands, enrolment
 from server.db import db
 from server.models import (
-    ApObservation, BleObservation, Device, IdsAlert, Job, JobChunk,
-    MonitorCycle, MonitorResult, MonitorRollup, Node, Telemetry,
+    ApObservation, BleObservation, CarrierObservation, Device, IdsAlert, Job,
+    JobChunk, MonitorCycle, MonitorResult, MonitorRollup, Node, Telemetry,
 )
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -272,6 +272,32 @@ def rf_ble():
             "mac": obs.mac, "name": obs.name, "manufacturer": obs.manufacturer,
             "connectable": obs.connectable, "observations": []})
         entry["observations"].append({"node": obs.node_id, "rssi": obs.rssi,
+                                      "observed_at": _iso(obs.observed_at)})
+    return jsonify(list(grouped.values()))
+
+
+@api.get("/rf/carriers")
+@auth.require_auth
+def rf_carriers():
+    """Sub-GHz carriers the fleet sees, with signal strength per probe.
+
+    The rf_sniff mirror of /rf/aps: one row per frequency, its per-node RSSI
+    observations nested underneath. Comparing rssi across node for the same
+    freq_mhz is the triangulation that locates a 433 MHz emitter — the query a
+    single handheld SDR cannot answer. Frequencies are keyed to two decimals so
+    slightly-drifting reports of the same carrier collapse into one row.
+    """
+    observations = db.session.execute(
+        db.select(CarrierObservation).order_by(CarrierObservation.observed_at.desc())
+    ).scalars().all()
+    grouped: dict[str, dict] = {}
+    for obs in observations:
+        key = f"{obs.freq_mhz:.2f}"
+        entry = grouped.setdefault(key, {
+            "freq_mhz": round(obs.freq_mhz, 2), "bandwidth_khz": obs.bandwidth_khz,
+            "observations": []})
+        entry["observations"].append({"node": obs.node_id, "rssi": obs.rssi,
+                                      "packets": obs.packets,
                                       "observed_at": _iso(obs.observed_at)})
     return jsonify(list(grouped.values()))
 

@@ -5,7 +5,9 @@ import pytest
 
 from protocol.validate import validate_message
 from server.ingest import handle_result, to_datetime
-from server.models import BleObservation, IdsAlert, Job, JobChunk
+from server.models import (
+    BleObservation, CarrierObservation, IdsAlert, Job, JobChunk,
+)
 
 TS = 1755302400
 
@@ -18,6 +20,15 @@ def result(data, ts=TS):
 @pytest.fixture
 def ble_job(db, node):
     record = Job(job_id="job-ble01", node_id=node.node_id, cmd="ble_scan",
+                 args={}, created_at=to_datetime(TS), last_event_at=to_datetime(TS))
+    db.session.add(record)
+    db.session.commit()
+    return record
+
+
+@pytest.fixture
+def rf_job(db, node):
+    record = Job(job_id="job-rf001", node_id=node.node_id, cmd="rf_sniff",
                  args={}, created_at=to_datetime(TS), last_event_at=to_datetime(TS))
     db.session.add(record)
     db.session.commit()
@@ -81,6 +92,53 @@ def test_duplicate_devices_seq_does_not_double_project(db, ble_job):
     handle_result(result(payload))
     handle_result(result(payload))          # QoS 1 redelivery
     assert db.session.query(BleObservation).count() == 1
+    assert db.session.query(JobChunk).count() == 1
+
+
+# --- rf_sniff -> carrier_observations --------------------------------------
+
+def test_carriers_chunk_projects_into_carrier_observations(db, rf_job):
+    handle_result(result({"event": "chunk", "job_id": "job-rf001", "seq": 0,
+                          "carriers": [
+                              {"freq_mhz": 433.92, "rssi": -64,
+                               "bandwidth_khz": 58, "packets": 12}]}))
+    obs = db.session.query(CarrierObservation).one()
+    assert obs.freq_mhz == 433.92
+    assert obs.rssi == -64
+    assert obs.bandwidth_khz == 58
+    assert obs.packets == 12
+    assert obs.node_id == "probe-a4c1f8"
+    assert obs.job_id == "job-rf001"
+
+
+def test_carriers_chunk_also_stored_as_raw_chunk(db, rf_job):
+    handle_result(result({"event": "chunk", "job_id": "job-rf001", "seq": 0,
+                          "carriers": [{"freq_mhz": 433.92, "rssi": -60}]}))
+    chunk = db.session.query(JobChunk).one()
+    assert chunk.payload["carriers"][0]["freq_mhz"] == 433.92
+
+
+def test_carrier_without_optional_fields_projects_nulls(db, rf_job):
+    handle_result(result({"event": "chunk", "job_id": "job-rf001", "seq": 0,
+                          "carriers": [{"freq_mhz": 868.3, "rssi": -77}]}))
+    obs = db.session.query(CarrierObservation).one()
+    assert obs.bandwidth_khz is None
+    assert obs.packets is None
+
+
+def test_empty_carriers_chunk_projects_nothing(db, rf_job):
+    handle_result(result({"event": "chunk", "job_id": "job-rf001", "seq": 0,
+                          "carriers": []}))
+    assert db.session.query(CarrierObservation).count() == 0
+    assert db.session.query(JobChunk).count() == 1
+
+
+def test_duplicate_carriers_seq_does_not_double_project(db, rf_job):
+    payload = {"event": "chunk", "job_id": "job-rf001", "seq": 0,
+               "carriers": [{"freq_mhz": 433.92, "rssi": -60}]}
+    handle_result(result(payload))
+    handle_result(result(payload))          # QoS 1 redelivery
+    assert db.session.query(CarrierObservation).count() == 1
     assert db.session.query(JobChunk).count() == 1
 
 

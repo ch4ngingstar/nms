@@ -11,8 +11,8 @@ from protocol.job import JobState, JobTracker
 from server.db import db
 from server.events import bus
 from server.models import (
-    ApObservation, BleObservation, Device, IdsAlert, Job, JobChunk,
-    MonitorCycle, MonitorResult, Node, Telemetry,
+    ApObservation, BleObservation, CarrierObservation, Device, IdsAlert, Job,
+    JobChunk, MonitorCycle, MonitorResult, Node, Telemetry,
 )
 
 
@@ -179,6 +179,22 @@ def _project_ble_observations(job: Job, data: dict, observed_at) -> None:
         ))
 
 
+def _project_carrier_observations(job: Job, data: dict, observed_at) -> None:
+    """Explode an rf_sniff chunk into the queryable observations table.
+
+    The rf_sniff analogue of _project_ap_observations: multi-vantage RSSI per
+    frequency is the triangulation query a single handheld SDR cannot answer.
+    """
+    for carrier in data.get("carriers", []):
+        db.session.add(CarrierObservation(
+            node_id=job.node_id, job_id=job.job_id,
+            freq_mhz=carrier["freq_mhz"], rssi=carrier.get("rssi"),
+            bandwidth_khz=carrier.get("bandwidth_khz"),
+            packets=carrier.get("packets"),
+            observed_at=observed_at,
+        ))
+
+
 def _project_ids_alerts(job: Job, data: dict, detected_at) -> None:
     """Flatten a wifi_ids or ble_scan `alerts` chunk into the typed alert table.
 
@@ -217,6 +233,8 @@ def _store_chunk(job: Job, data: dict, received_at) -> None:
         _project_ap_observations(job, data, received_at)
     if "devices" in data:
         _project_ble_observations(job, data, received_at)
+    if "carriers" in data:
+        _project_carrier_observations(job, data, received_at)
     if "alerts" in data:
         _project_ids_alerts(job, data, received_at)
 

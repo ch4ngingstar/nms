@@ -64,3 +64,11 @@ def _validate_command_args(command: str, args: dict) -> None:
         _check(_validator(f"args/{command}"), args, f"{command} args")
     if command == "port_scan":
         parse_ports(args["ports"])
+    if command == "rf_sniff":
+        # Schema bounds each endpoint to the sub-GHz band but cannot compare the
+        # two fields; an inverted sweep is caught here, as port_scan's is.
+        if args["freq_min_mhz"] > args["freq_max_mhz"]:
+            raise ProtocolError(
+                f"rf_sniff freq range inverted: "
+                f"{args['freq_min_mhz']} > {args['freq_max_mhz']}"
+            )

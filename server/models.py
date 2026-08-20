@@ -223,6 +223,40 @@ class BleObservation(db.Model):
     )
 
 
+class CarrierObservation(db.Model):
+    """A sub-GHz carrier seen by one probe during an rf_sniff job.
+
+    The rf_sniff analogue of ap_observations / ble_observations: the same
+    multi-vantage question — GROUP BY freq_mhz comparing rssi across node_id to
+    locate a 433 MHz emitter or jammer by triangulation — is what justifies a
+    typed table rather than leaving the sweep buried in job_chunks payloads.
+    """
+
+    __tablename__ = "carrier_observations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    node_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("nodes.node_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    job_id = db.Column(
+        db.String(NODE_ID_LEN),
+        db.ForeignKey("jobs.job_id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    freq_mhz = db.Column(db.Float, nullable=False)
+    rssi = db.Column(db.Integer)
+    bandwidth_khz = db.Column(db.Integer)
+    packets = db.Column(db.Integer)
+    observed_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                            default=_utcnow, index=True)
+
+    __table_args__ = (
+        db.Index("ix_carrier_freq_time", "freq_mhz", "observed_at"),
+    )
+
+
 class IdsAlert(db.Model):
     """A wireless intrusion-detection alert projected from a wifi_ids or
     ble_scan job.

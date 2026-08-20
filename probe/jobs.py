@@ -12,7 +12,7 @@ from collections.abc import Iterator
 from probe import checks
 from protocol.ports import parse_ports
 
-CAPABILITIES = ["port_scan", "banner_grab", "dns", "trace", "discover"]
+CAPABILITIES = ["port_scan", "banner_grab", "dns", "trace", "discover", "rf_sniff"]
 
 
 def port_scan(args: dict) -> Iterator[dict]:
@@ -77,8 +77,36 @@ def trace(args: dict) -> Iterator[dict]:
         yield {"host": host, "reachable": checks.ping(host)["status"] == "up"}
 
 
+def rf_sniff(args: dict) -> Iterator[dict]:
+    """RF-Sentinel: sub-GHz carrier telemetry.
+
+    The one deliberately *synthetic* runner. Every other runner above does real
+    host I/O; this host has no CC1101, so — exactly as ble_scan/wifi_survey are
+    absent because a server has no radio — rf_sniff instead fabricates a
+    deterministic carrier sweep. It exists to exercise the protocol path
+    (schema -> chunk -> ingest projection -> dashboard) end-to-end and to drive
+    the demo simulator before any board arrives. Firmware on a real CC1101
+    produces the same chunk shape from live captures.
+
+    Deterministic (no RNG) so golden/conformance behaviour is stable: it steps
+    across the requested band at 250 kHz and reports a carrier at each step whose
+    RSSI is a fixed function of its offset from 433.92 MHz (the 433 ISM centre),
+    strongest at the centre and falling off with distance.
+    """
+    lo = float(args["freq_min_mhz"])
+    hi = float(args["freq_max_mhz"])
+    carriers = []
+    freq = lo
+    while freq <= hi + 1e-9:
+        rssi = int(round(-60 - min(30.0, abs(freq - 433.92) * 40)))
+        carriers.append({"freq_mhz": round(freq, 2), "rssi": rssi,
+                         "bandwidth_khz": 58, "packets": 1})
+        freq += 0.25
+    yield {"carriers": carriers}
+
+
 RUNNERS = {"port_scan": port_scan, "banner_grab": banner_grab, "dns": dns,
-           "discover": discover, "trace": trace}
+           "discover": discover, "trace": trace, "rf_sniff": rf_sniff}
 
 
 def run_command(cmd: str, args: dict) -> Iterator[dict]:

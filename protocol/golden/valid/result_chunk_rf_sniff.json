@@ -1,0 +1,4 @@
+{"v":1,"type":"result","node":"probe-a4c1f8","msg_id":"01J8X2KB0008","ts":1755302400,
+ "data":{"event":"chunk","job_id":"job-7f3a98","seq":0,
+ "carriers":[{"freq_mhz":433.92,"rssi":-64,"bandwidth_khz":58,"packets":12},
+ {"freq_mhz":434.42,"rssi":-91,"bandwidth_khz":58,"packets":1}]}}
