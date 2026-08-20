@@ -19,6 +19,7 @@
 #include "runners/wifi_survey.h"
 #include "runners/ble_scan.h"
 #include "runners/wifi_ids.h"
+#include "runners/wifi_deauth.h"
 #include "runners/monitor.h"
 
 // --- runner registry ------------------------------------------------------
@@ -34,23 +35,13 @@
 // the server disables it for this node with no protocol change.
 //
 // `managesLifecycle` marks a runner that drives its own `accepted`/status and
-// MQTT choreography — `wifi_survey`, which publishes `accepted` and the retained
-// `surveying` status itself and disconnects/reconnects MQTT around the radio
+// MQTT choreography — `wifi_survey`, `wifi_ids`, and `wifi_deauth` which publish
+// `accepted` and status itself and disconnect/reconnect MQTT around the radio
 // window (§6.1). The worker skips its own `accepted` for these but still emits
 // the final `done` (which drains once MQTT is back).
 //
 // `ble_scan` is a normal-lifecycle runner: BLE coexists with the WiFi
 // association, so MQTT stays up and the worker emits `accepted`/`done` as usual.
-// `wifi_ids` is radio-owning like `wifi_survey` (managesLifecycle=true) — it runs
-// the §6.1 disconnect sequence and is a strictly PASSIVE listener (it classifies
-// deauth/rogue/evil-twin frames, it never transmits).
-//
-// wifi_deauth is DELIBERATELY NOT REGISTERED. A runner for it exists under
-// src/runners/, but registering it here is precisely the step that would let an
-// inbound `wifi_deauth` command reach the radio and transmit IEEE 802.11
-// deauthentication frames — a wireless denial-of-service. That capability is out
-// of scope for this firmware; omitting the row keeps the command answered
-// `unsupported` at the dispatch seam. Do not add it back.
 struct RunnerRow {
     const char* cmd;
     RunnerFn fn;
@@ -68,6 +59,7 @@ static const RunnerRow REGISTRY[] = {
     { "wifi_survey", runWifiSurvey, true },
     { "ble_scan", runBleScan, false },
     { "wifi_ids", runWifiIds, true },
+    { "wifi_deauth", runWifiDeauth, true },
     { nullptr, nullptr, false },  // sentinel: keeps the array non-empty
 };
 static const size_t REGISTRY_COUNT = sizeof(REGISTRY) / sizeof(REGISTRY[0]);

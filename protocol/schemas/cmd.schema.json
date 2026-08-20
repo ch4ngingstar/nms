@@ -8,7 +8,7 @@
     "job_id": { "type": "string", "minLength": 4, "maxLength": 32 },
     "cmd": {
       "enum": ["port_scan", "banner_grab", "dns", "trace", "discover",
-               "wifi_survey", "ble_scan", "wifi_ids", "set_monitor", "cancel",
+               "wifi_survey", "ble_scan", "wifi_ids", "wifi_deauth", "set_monitor", "cancel",
                "identify", "reboot", "get_config"]
     },
     "args": { "type": "object" }

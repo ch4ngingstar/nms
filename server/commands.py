@@ -28,7 +28,7 @@ CONTROL_COMMANDS = {"set_monitor", "cancel", "identify", "reboot", "get_config"}
 # ble_scan and wifi_ids are the Phase-4 radio additions (spec §6.4).
 RECON_COMMANDS = frozenset({
     "port_scan", "banner_grab", "dns", "trace", "discover",
-    "wifi_survey", "ble_scan", "wifi_ids",
+    "wifi_survey", "ble_scan", "wifi_ids", "wifi_deauth",
 })
 
 

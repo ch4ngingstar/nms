@@ -26,7 +26,8 @@
     "clients": { "type": "array", "items": { "type": "object" } },
     "devices": { "type": "array", "items": { "type": "object" } },
     "alerts": { "type": "array", "items": { "type": "object" } },
-    "frame_stats": { "type": "object" }
+    "frame_stats": { "type": "object" },
+    "deauth": { "type": "object" }
   },
   "allOf": [
     {
