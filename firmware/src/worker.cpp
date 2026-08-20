@@ -20,6 +20,7 @@
 #include "runners/ble_scan.h"
 #include "runners/wifi_ids.h"
 #include "runners/wifi_deauth.h"
+#include "runners/rf_sniff.h"
 #include "runners/monitor.h"
 
 // --- runner registry ------------------------------------------------------
@@ -60,6 +61,9 @@ static const RunnerRow REGISTRY[] = {
     { "ble_scan", runBleScan, false },
     { "wifi_ids", runWifiIds, true },
     { "wifi_deauth", runWifiDeauth, true },
+    // rf_sniff drives a CC1101 on its own SPI bus, not the 2.4 GHz radio, so MQTT
+    // stays up and it uses the normal lifecycle (managesLifecycle=false).
+    { "rf_sniff", runRfSniff, false },
     { nullptr, nullptr, false },  // sentinel: keeps the array non-empty
 };
 static const size_t REGISTRY_COUNT = sizeof(REGISTRY) / sizeof(REGISTRY[0]);

@@ -104,6 +104,27 @@ Target board: classic ESP32 WROOM-32 (`board = esp32dev` in `firmware/platformio
 S3. Framework is Arduino-on-PlatformIO with `espressif32@6.9.0`, so `esp_wifi_*` ESP-IDF calls are
 available directly.
 
+**RF-Sentinel wiring (CC1101 sub-GHz, `rf_sniff`).** The `rf_sniff` runner drives a CC1101
+transceiver on the ESP32's VSPI bus — a *separate* radio from the 2.4 GHz WiFi/BLE core, so the
+sweep never leaves the AP and MQTT stays connected throughout (it runs the normal worker
+lifecycle, not the survey disconnect sequence). Wiring for the classic WROOM-32:
+
+| CC1101 pin | ESP32 GPIO | Notes |
+| --- | --- | --- |
+| SCK | GPIO18 | VSPI clock |
+| MISO / SO | GPIO19 | VSPI MISO |
+| MOSI / SI | GPIO23 | VSPI MOSI |
+| CSN / CS | GPIO5 | VSPI SS (strapping pin, idles high — fine as CS) |
+| GDO0 | GPIO4 | RX carrier-sense / async data out (interrupt-capable) |
+| GDO2 | GPIO25 | secondary status (reserved; wired for completeness) |
+| VCC | 3V3 | **3.3 V only — 5 V destroys the module** |
+| GND | GND | |
+
+GPIO2 is deliberately avoided: it drives the onboard LED the `identify` command blinks. The driver
+is `lsatan/SmartRC-CC1101-Driver-Lib` (MIT), pinned in `firmware/platformio.ini` under `[env:esp32]`
+only — the native host build has no CC1101 and returns `unsupported`, like the other radio runners.
+This table is mirrored at the top of `firmware/src/runners/rf_sniff.cpp`.
+
 **Power.** WiFi TX and promiscuous-mode radio windows draw current spikes well above what a weak
 USB port or hub can source cleanly; a brownout reset mid-scan is the usual symptom, not a hang.
 Use a real USB data cable into a mainboard port (not a hub) during development, and if
