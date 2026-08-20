@@ -1,4 +1,4 @@
-// Reconnect backoff (protocol §8.4) — pure and host-testable, split out of
+// Reconnect backoff — pure and host-testable, split out of
 // mqtt_client so the native Unity suite can exercise it without pulling in the
 // PubSubClient / FreeRTOS translation unit. mqtt_client.cpp calls it from the
 // reconnect path.

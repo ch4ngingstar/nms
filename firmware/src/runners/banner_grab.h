@@ -1,5 +1,5 @@
-// banner_grab recon runner (spec §6.4 `nc` mapping; protocol result key
-// "banners"). Raw TCP connect, read what a service emits on connect. Mirrors
+// banner_grab recon runner (result key "banners"). Raw TCP connect, read what
+// a service emits on connect. Mirrors
 // probe/jobs.py:banner_grab — one {"banners":[{host,port,banner}]} result, with
 // banner null when nothing was read or the connect failed.
 #pragma once

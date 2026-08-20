@@ -1,4 +1,4 @@
-"""Admin authentication for the web console (spec §11).
+"""Admin authentication for the web console.
 
 A single admin password, hashed with werkzeug and read from
 `NMS_ADMIN_PASSWORD_HASH` in the environment. Login establishes a Flask

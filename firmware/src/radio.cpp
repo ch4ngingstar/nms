@@ -16,8 +16,8 @@ static ProbeConfig s_cfg;
 static volatile RadioState s_state = RADIO_STATION;
 static volatile bool s_lockHeld = false;
 
-// Dwell per channel while sniffing clients (spec §6.3; Bit-Pirate handleSniff
-// uses a comparable hop cadence).
+// Dwell per channel while sniffing clients (Bit-Pirate handleSniff uses a
+// comparable hop cadence).
 static const uint32_t DWELL_MS = 220;
 
 // The promiscuous RX callback runs in WiFi-driver context, so the client buffer
@@ -56,10 +56,10 @@ const char* radioAuthName(uint8_t authMode) {
 
 void radioInit(const ProbeConfig& cfg) { s_cfg = cfg; }
 
-// --- AP scan (§6.3) -------------------------------------------------------
+// --- AP scan -----------------------------------------------------------
 //
 // esp_wifi_scan_start is used rather than WiFi.scanNetworks() so no Arduino
-// String is created in the job path (spec §7). wifi_ap_record_t already carries
+// String is created in the job path. wifi_ap_record_t already carries
 // decoded authmode, avoiding raw IE parsing.
 static void radioApScan(SurveyBuffers& buf, bool passive) {
     wifi_scan_config_t cfg;
@@ -98,7 +98,7 @@ static void radioApScan(SurveyBuffers& buf, bool passive) {
     free(recs);
 }
 
-// --- client sniff (§6.3) --------------------------------------------------
+// --- client sniff --------------------------------------------------------
 
 // Dedup-inserts a station under the spinlock, keeping the strongest RSSI. Runs in
 // the RX callback context, so it must be short and lock-brief.
@@ -120,7 +120,7 @@ static void insertClient(const uint8_t* mac, const uint8_t* bssid, int8_t rssi) 
         s_cli[s_cliCount].rssi = rssi;
         ++s_cliCount;
     } else {
-        ++s_cliDropped;  // §8.5 drop semantics — never exhaust the heap to grow
+        ++s_cliDropped;  // counted as a drop rather than grown — never exhaust the heap
     }
     portEXIT_CRITICAL_ISR(&s_cliMux);
 }
@@ -185,7 +185,7 @@ static void sniffClients(SurveyBuffers& buf, const uint8_t* channels,
     portEXIT_CRITICAL(&s_cliMux);
 }
 
-// --- the survey sequence (§6.1) -------------------------------------------
+// --- the survey sequence ---------------------------------------------------
 
 bool radioRunSurvey(const char* jobId, uint16_t durationS,
                     const uint8_t* channels, size_t nChannels, bool passive,
@@ -237,7 +237,7 @@ bool radioRunSurvey(const char* jobId, uint16_t durationS,
     return true;
 }
 
-// --- passive IDS sniff (§6.4) ---------------------------------------------
+// --- passive IDS sniff -----------------------------------------------------
 //
 // Reached from the WiFi driver's promiscuous callback like the survey sniffer,
 // so the shared IDS buffer is guarded by a spinlock through file statics (a C
@@ -385,7 +385,7 @@ bool radioRunIds(const char* jobId, uint16_t durationS,
         return false;
     }
 
-    // §6.1 sequence (identical to the survey): accepted while connected, retained
+    // Same handoff sequence as the survey: accepted while connected, retained
     // surveying status, hand off PubSubClient, clean DISCONNECT (no false LWT),
     // then leave the AP.
     mqttPublishAccepted(jobId);

@@ -7,7 +7,7 @@
 #include <ArduinoJson.h>
 
 // lwIP sockets exist only in the device build; the pure port-spec parser below
-// is compiled everywhere so the native test env can exercise it (spec §9.1).
+// is compiled everywhere so the native test env can exercise it.
 #if defined(ESP_PLATFORM) || defined(ARDUINO)
 #define NMS_HAS_LWIP 1
 #include <errno.h>
@@ -21,7 +21,8 @@
 #endif
 
 // Cap on ports materialized from one spec — bounds heap use if an operator sends
-// a huge range. A spec expanding past this fills what fits (spec §7 memory rules).
+// a huge range. A spec expanding past this fills what fits rather than growing
+// unbounded.
 static const size_t MAX_PORTS = 1024;
 
 // --- pure port-spec parser (host-testable) --------------------------------
@@ -134,7 +135,7 @@ static PortState classifySoErr(int soerr) {
 }
 
 // Emits accumulated open ports for one host as {"open":[...]} chunks, splitting
-// so no chunk approaches the 1024-byte cap (spec §7.2). Returns rows emitted.
+// so no chunk approaches the 1024-byte cap. Returns rows emitted.
 static uint32_t flushOpen(const char* host, const uint16_t* ports,
                           const uint32_t* rtts, size_t n,
                           EmitChunkFn emit, void* sink) {
@@ -188,7 +189,7 @@ static uint32_t scanHost(const struct in_addr& addr, const char* host,
         while (waveN < (size_t)concurrency && idx < nPorts) {
             uint16_t port = ports[idx++];
             int s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-            if (s < 0) continue;  // descriptor exhaustion — skip, spec §7
+            if (s < 0) continue;  // descriptor exhaustion — skip
             int nb = 1;
             if (ioctl(s, FIONBIO, &nb) < 0) { close(s); continue; }
 
@@ -304,7 +305,7 @@ bool runPortScan(const RunnerCtx& ctx, EmitChunkFn emit, IsCancelledFn cancelled
     if (timeoutMs > 60000) timeoutMs = 60000;
     int concurrency = args["concurrency"] | 8;
     if (concurrency < 1) concurrency = 1;
-    if (concurrency > 8) concurrency = 8;  // clamp to lwIP budget (spec §7), do not error
+    if (concurrency > 8) concurrency = 8;  // clamp to lwIP's fd budget, do not error
 
 #if NMS_HAS_LWIP
     uint32_t rows = 0;

@@ -47,7 +47,7 @@ def test_recon_command_not_in_capabilities_is_rejected(db, node, captured):
 
 
 def test_control_command_needs_no_capability(db, node, captured):
-    """identify/reboot/get_config are a mandatory baseline (spec §8)."""
+    """identify/reboot/get_config are a mandatory baseline."""
     create_job("probe-a4c1f8", "identify", {})
     assert captured[0][0] == "nms/v1/node/probe-a4c1f8/cmd"
 

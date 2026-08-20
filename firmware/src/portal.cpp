@@ -11,7 +11,7 @@
 
 // SoftAP is fixed at 192.168.4.1 (the ESP32 default); the DNS wildcard points
 // every lookup here so a phone that joins the AP is bounced to the form no
-// matter what URL it opens (spec §4.3).
+// matter what URL it opens.
 static const IPAddress AP_IP(192, 168, 4, 1);
 static const IPAddress AP_MASK(255, 255, 255, 0);
 static const byte DNS_PORT = 53;
@@ -19,7 +19,7 @@ static const byte DNS_PORT = 53;
 static DNSServer dnsServer;
 static WebServer server(80);
 
-// The provisioning form. One %s (the mqtt_user default = node_id, spec §4.3);
+// The provisioning form. One %s (the mqtt_user default = node_id);
 // literal percent signs in the CSS are doubled so snprintf_P leaves them alone.
 // Kept in flash (PROGMEM) — it is never mutated.
 static const char FORM_FMT[] PROGMEM =
@@ -72,7 +72,7 @@ static void handleSave() {
     // Port parsed via atoi on the transient c_str() — no String kept.
     long port = atol(server.arg("broker_port").c_str());
 
-    // MQTT username defaults to node_id when left blank (spec §4.3).
+    // MQTT username defaults to node_id when left blank.
     if (cfg.mqtt_user[0] == '\0') {
         strlcpy(cfg.mqtt_user, getNodeId(), sizeof(cfg.mqtt_user));
     }
@@ -107,14 +107,14 @@ static void handleSave() {
 }
 
 void startPortal() {
-    // node_id is already "probe-<hex>", so the AP name is "nms-probe-<hex>"
-    // exactly as spec §4.2 specifies.
+    // node_id is already "probe-<hex>", so the AP name comes out as
+    // "nms-probe-<hex>".
     static char apName[32];
     snprintf(apName, sizeof(apName), "nms-%s", getNodeId());
 
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(AP_IP, AP_IP, AP_MASK);
-    WiFi.softAP(apName);  // Open network — no password argument (spec §4.3).
+    WiFi.softAP(apName);  // Open network — no password argument.
 
     // Wildcard: resolve every hostname to us so any navigation hits the form.
     dnsServer.start(DNS_PORT, "*", AP_IP);

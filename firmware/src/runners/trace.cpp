@@ -87,7 +87,7 @@ bool runTrace(const RunnerCtx& ctx, EmitChunkFn emit, IsCancelledFn cancelled,
             if (s < 0) {
                 snprintf(errCode, errCodeSize, "unsupported");
                 snprintf(errMsg, errMsgSize, "raw ICMP socket unavailable");
-                return false;  // §10.1: no raw sockets -> trace cannot run
+                return false;  // no raw sockets -> trace cannot run
             }
             setsockopt(s, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
             struct timeval tv;
@@ -168,7 +168,7 @@ bool runTrace(const RunnerCtx& ctx, EmitChunkFn emit, IsCancelledFn cancelled,
     (void)emit; (void)cancelled; (void)sink; (void)targets;
     *resultsOut = 0;
     snprintf(errCode, errCodeSize, "unsupported");
-    snprintf(errMsg, errMsgSize, "trace not built (raw ICMP unavailable, spec §10.1)");
+    snprintf(errMsg, errMsgSize, "trace not built (raw ICMP unavailable)");
     return false;
 #endif
 }

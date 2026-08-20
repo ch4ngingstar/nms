@@ -1,5 +1,5 @@
 """Ingest projection for the Phase-4 radio chunks: ble_scan `devices` and
-wifi_ids `alerts` (spec §6.2, §6.4). Mirrors test_ingest_result.py's shape."""
+wifi_ids `alerts`. Mirrors test_ingest_result.py's shape."""
 
 import pytest
 

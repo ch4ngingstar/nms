@@ -1,4 +1,4 @@
-// Firmware entry point (firmware spec §4.2 boot sequence, §5 task topology).
+// Firmware entry point.
 //
 // setup() reads NVS and forks: unprovisioned -> captive portal; provisioned ->
 // join WiFi, sync time, connect MQTT (with Last Will), announce, and spawn the
@@ -16,8 +16,8 @@
 #include "mqtt_client.h"
 #include "worker.h"
 
-// Classic ESP32 WROOM-32 onboard LED (firmware spec §3.1: plain GPIO, not the
-// S3's addressable WS2812). Used for the `identify` blink.
+// Classic ESP32 WROOM-32 onboard LED — plain GPIO, not the S3's addressable
+// WS2812. Used for the `identify` blink.
 static const int LED_PIN = 2;
 
 static ProbeConfig g_cfg;
@@ -45,7 +45,7 @@ static void connectWifi(const ProbeConfig& cfg) {
 }
 
 static void syncTime() {
-    // ts must be real Unix seconds (protocol §5.2: minimum 1e9). Pull it from
+    // ts must be real Unix seconds (minimum 1e9). Pull it from
     // SNTP; without this every envelope would carry seconds-since-boot and fail
     // validation server-side.
     configTime(0, 0, "pool.ntp.org", "time.nist.gov");
@@ -68,7 +68,7 @@ void setup() {
     g_provisioned = loadConfig(g_cfg);
     if (!g_provisioned) {
         // Unprovisioned: raise the SoftAP portal and stay there until the
-        // operator submits the form, which saves NVS and reboots (spec §4.3).
+        // operator submits the form, which saves NVS and reboots.
         startPortal();
         return;
     }
@@ -79,8 +79,7 @@ void setup() {
     mqttInit(g_cfg);
 
     // Spawn the worker on core 1; the MQTT task is this Arduino loop() on the
-    // other core. The core split keeps a long scan from starving MQTT keepalive
-    // (firmware spec §5).
+    // other core. The core split keeps a long scan from starving MQTT keepalive.
     workerStart();
 
     // First connect happens on the first loop() tick via the backoff path.

@@ -1,4 +1,4 @@
-"""Background maintenance: job timeouts, rollups, pruning (spec §6.3, §8).
+"""Background maintenance: job timeouts, rollups, pruning.
 
 One thread on a 10-second tick. Timeouts are swept every tick because an
 hourly sweep would leave a hung job undetected for up to an hour; rollup and

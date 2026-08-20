@@ -1,14 +1,14 @@
-// Persisted probe configuration in NVS (spec §4.2, §4.3).
+// Persisted probe configuration in NVS.
 //
 // The operator transcribes broker coordinates and the server-issued MQTT
-// credentials into the captive portal (spec §4.3); this is where they land so
+// credentials into the captive portal; this is where they land so
 // they survive reboots. The firmware never invents credentials.
 #pragma once
 
 #include <stdint.h>
 
 // NVS namespace holding the config blob. Kept as a named constant because
-// clearConfig() (factory reset, spec §4.3) must target exactly this namespace.
+// clearConfig() (factory reset) must target exactly this namespace.
 static const char* NVS_NAMESPACE = "nms";
 
 // Field sizes include the trailing NUL. SSID and WPA2 passphrase limits come
@@ -26,7 +26,7 @@ struct ProbeConfig {
 
 // Loads config from NVS into `out`. On a fresh device (or after clearConfig)
 // the namespace is empty: `out` is zeroed and out.valid is false, which the
-// boot sequence reads as `unprovisioned` (spec §4.2). Returns out.valid.
+// boot sequence reads as `unprovisioned`. Returns out.valid.
 bool loadConfig(ProbeConfig& out);
 
 // Writes `cfg` to NVS as a single blob and marks it valid. Returns true on a
@@ -34,6 +34,6 @@ bool loadConfig(ProbeConfig& out);
 bool saveConfig(const ProbeConfig& cfg);
 
 // Erases the config namespace, returning the node to `unprovisioned`. This is
-// the GPIO0-hold recovery path (spec §4.3) for a changed broker IP or a
+// the GPIO0-hold recovery path for a changed broker IP or a
 // mistyped password. Returns true on success.
 bool clearConfig();

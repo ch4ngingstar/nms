@@ -1,5 +1,5 @@
-// port_scan recon runner (spec §6.4 nmap mapping, §7.5; protocol result key
-// "open"). TCP connect scan reporting the open/closed/filtered trichotomy, with
+// port_scan recon runner (result key "open"). TCP connect scan reporting the
+// open/closed/filtered trichotomy, with
 // only the open ports surfaced per target — matching probe/jobs.py:port_scan
 // ("the ports found open on it") and the golden result_chunk_port_scan fixture.
 #pragma once
@@ -9,7 +9,7 @@
 
 #include "../worker.h"  // RunnerCtx, EmitChunkFn, IsCancelledFn
 
-// Pure, host-testable port-spec parser (spec §7.2, §9.1) — the C++ side of the
+// Pure, host-testable port-spec parser — the C++ side of the
 // contract in protocol/ports.py. Parses "22,80,443,8000-8100" into ascending,
 // de-duplicated ports written to `out` (up to `maxPorts`). Returns the count on
 // success, or -1 on malformed input (empty element, non-decimal, out of 1..65535,

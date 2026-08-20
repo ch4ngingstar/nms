@@ -1,4 +1,4 @@
-"""Command implementations for the virtual probe (spec §9).
+"""Command implementations for the virtual probe.
 
 Each runner is a generator yielding chunk payloads. The virtual probe wraps
 each yielded dict in a `result`/`chunk` envelope with an incrementing seq, so

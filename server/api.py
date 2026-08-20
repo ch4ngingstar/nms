@@ -1,4 +1,4 @@
-"""REST blueprint (spec §10).
+"""REST blueprint.
 
 Every route except login is guarded by @require_auth. Serialization is inline
 and deliberately small — this surface has no ORM-to-JSON magic to hide a schema
@@ -241,7 +241,7 @@ def cancel_job(job_id):
 @api.get("/rf/aps")
 @auth.require_auth
 def rf_aps():
-    """Access points the fleet sees, with signal strength per probe (spec §10)."""
+    """Access points the fleet sees, with signal strength per probe."""
     observations = db.session.execute(
         db.select(ApObservation).order_by(ApObservation.observed_at.desc())
     ).scalars().all()
@@ -258,7 +258,7 @@ def rf_aps():
 @api.get("/rf/ble")
 @auth.require_auth
 def rf_ble():
-    """BLE devices the fleet sees, with signal strength per probe (spec §6.2).
+    """BLE devices the fleet sees, with signal strength per probe.
 
     The ble_scan mirror of /rf/aps: one row per device MAC, its per-node RSSI
     observations nested underneath for the multi-vantage correlation view.
@@ -288,7 +288,7 @@ def _alert_dict(alert: IdsAlert) -> dict:
 @api.get("/security/alerts")
 @auth.require_auth
 def security_alerts():
-    """Wireless IDS alert timeline, newest first (spec §6.4).
+    """Wireless IDS alert timeline, newest first.
 
     Optional ?type= filter narrows to one alert_type; ?node= to one probe.
     """
@@ -306,7 +306,7 @@ def security_alerts():
 @api.get("/security/rogue-aps")
 @auth.require_auth
 def security_rogue_aps():
-    """The rogue_ap / evil_twin subset of IDS alerts — unexpected APs (spec §6.4)."""
+    """The rogue_ap / evil_twin subset of IDS alerts — unexpected APs."""
     alerts = db.session.execute(
         db.select(IdsAlert)
         .where(IdsAlert.alert_type.in_(("rogue_ap", "evil_twin")))

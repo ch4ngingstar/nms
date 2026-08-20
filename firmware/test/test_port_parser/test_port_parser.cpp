@@ -1,4 +1,4 @@
-// Native unit tests for parsePortSpec (spec §7.2, §9.1) — the C++ side of the
+// Native unit tests for parsePortSpec — the C++ side of the
 // protocol/ports.py contract. The parser is pure; port_scan.cpp's socket paths
 // are #ifdef'd out on native, so only this parser links here.
 //
@@ -82,7 +82,7 @@ static void test_non_decimal_rejected(void) {
     TEST_ASSERT_EQUAL_INT(-1, parsePortSpec("0x50", out, 16));
 }
 
-// A range wider than the buffer fills what fits and returns that count (spec §7).
+// A range wider than the buffer fills what fits and returns that count.
 static void test_maxports_clamp_fills_what_fits(void) {
     uint16_t out[4];
     int n = parsePortSpec("1-100", out, 4);

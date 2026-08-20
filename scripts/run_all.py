@@ -1,4 +1,4 @@
-"""Start the whole stack with one command (spec §12).
+"""Start the whole stack with one command.
 
 Brings up the Mosquitto broker, waits for it to accept connections, then runs
 the Flask server (with its MQTT bridge and maintenance thread) and the virtual
@@ -35,7 +35,7 @@ def _wait_for_broker(host: str, port: int, timeout_s: float = 30.0) -> None:
 
 def main() -> None:
     if not os.environ.get("SECRET_KEY"):
-        raise SystemExit("SECRET_KEY is not set; refusing to start (spec §11)")
+        raise SystemExit("SECRET_KEY is not set; refusing to start")
 
     host = os.environ.get("NMS_BROKER_HOST", "localhost")
     port = int(os.environ.get("NMS_BROKER_PORT", "1883"))

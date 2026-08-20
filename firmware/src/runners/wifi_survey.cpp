@@ -58,7 +58,7 @@ bool runWifiSurvey(const RunnerCtx& ctx, EmitChunkFn emit, IsCancelledFn cancell
     }
 
 #if NMS_HAS_RADIO
-    // Size the survey buffers from free heap, capped (spec §6.3, §7): use at most
+    // Size the survey buffers from free heap, capped: use at most
     // ~1/6 of free heap, split between APs and clients.
     size_t budget = ESP.getFreeHeap() / 6;
     size_t apCap = budget / 2 / sizeof(ApRecord);
@@ -91,7 +91,7 @@ bool runWifiSurvey(const RunnerCtx& ctx, EmitChunkFn emit, IsCancelledFn cancell
     }
 
     // Serialize APs then clients into <=1024-byte chunks; fold the overflow drop
-    // count into the first chunk (§8.5).
+    // count into the first chunk.
     static char out[900];
     char mac[18], bss[18];
     uint32_t dropped = buf.apDropped + buf.clientDropped;

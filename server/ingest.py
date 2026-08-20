@@ -1,4 +1,4 @@
-"""Handlers for validated protocol messages (spec §7.2).
+"""Handlers for validated protocol messages.
 
 Deliberately free of MQTT and threading: each handler takes an already
 validated message dict and writes rows, so protocol semantics are testable
@@ -17,7 +17,7 @@ from server.models import (
 
 
 def to_datetime(epoch_seconds: int) -> datetime:
-    """Protocol timestamps are Unix seconds, UTC (protocol spec §5.2)."""
+    """Protocol timestamps are Unix seconds, UTC."""
     return datetime.fromtimestamp(epoch_seconds, tz=timezone.utc)
 
 
@@ -151,7 +151,7 @@ def _project_ap_observations(job: Job, data: dict, observed_at) -> None:
     """Explode a wifi_survey chunk into the queryable observations table.
 
     Only RF survey gets a projection: GROUP BY bssid comparing rssi across
-    node_id is the multi-vantage query that justifies a typed table (spec §6.2).
+    node_id is the multi-vantage query that justifies a typed table.
     """
     for access_point in data.get("aps", []):
         db.session.add(ApObservation(
@@ -167,7 +167,7 @@ def _project_ble_observations(job: Job, data: dict, observed_at) -> None:
     """Explode a ble_scan chunk into the queryable observations table.
 
     The ble_scan analogue of _project_ap_observations: multi-vantage RSSI per
-    device MAC is the query a single handheld tool cannot answer (spec §6.2).
+    device MAC is the query a single handheld tool cannot answer.
     """
     for device in data.get("devices", []):
         db.session.add(BleObservation(
@@ -185,7 +185,7 @@ def _project_ids_alerts(job: Job, data: dict, detected_at) -> None:
     The alert objects differ by type: a deauth_flood carries source_mac/
     target_mac/count, while rogue_ap and evil_twin name the offending AP in
     `bssid` and carry no victim or count. Both AP-identity kinds land their MAC
-    in source_mac so the timeline is uniform (spec §6.4).
+    in source_mac so the timeline is uniform.
     """
     for alert in data.get("alerts", []):
         db.session.add(IdsAlert(
@@ -219,7 +219,7 @@ def _store_chunk(job: Job, data: dict, received_at) -> None:
 
 
 def handle_result(message: dict):
-    """Drive one job's state machine from a result event (spec §8)."""
+    """Drive one job's state machine from a result event."""
     data = message["data"]
     job = db.session.get(Job, data["job_id"])
     if job is None:

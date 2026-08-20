@@ -1,4 +1,4 @@
-"""Server-Sent Events endpoint (spec §7.3, §10).
+"""Server-Sent Events endpoint.
 
 One stream carries all four event types — node_status, job_event,
 monitor_cycle, telemetry — because browsers cap concurrent connections per

@@ -33,7 +33,7 @@ static char s_topicStatus[48];
 static char s_topicTelemetry[48];
 static char s_topicMonitor[48];
 
-// Survey handoff (spec §6.1): while a survey owns the radio+MQTT on the worker,
+// Survey handoff: while a survey owns the radio+MQTT on the worker,
 // the MQTT task (loop()) observes s_surveyPause, acknowledges, and steps aside.
 static volatile bool s_surveyPause = false;
 static volatile bool s_surveyPausedAck = false;
@@ -60,7 +60,7 @@ static void buildTopic(char* out, size_t size, const char* leaf) {
 
 // Publishes an envelope directly from the MQTT task. PubSubClient publishes at
 // QoS 0 only (a library limitation, not a protocol choice); the retained flag
-// is honored, which is what `status` actually depends on (protocol §4.4).
+// is honored, which is what `status` actually depends on.
 static bool publishDirect(const char* topic, const char* type,
                           const char* dataJson, bool retained) {
     static char buf[PAYLOAD_MAX_BYTES + 1];
@@ -95,7 +95,7 @@ static bool isCapable(const char* cmd) {
 
 static bool seenBefore(const char* jobId) {
     // The ring's owner stays this (single-writer) MQTT task; only the pure logic
-    // lives in job_dedup so the native suite can test it (spec §5).
+    // lives in job_dedup so the native suite can test it.
     static JobDedup s_dedup{};
     return jobDedupSeen(s_dedup, jobId);
 }
@@ -110,7 +110,7 @@ static void emitAnnounce() {
     JsonDocument d;
     d["label"] = s_cfg.label;
     d["fw"] = FW_VERSION;
-    d["chip"] = "esp32";  // classic WROOM-32 (firmware spec §3.1)
+    d["chip"] = "esp32";  // classic WROOM-32, not the S3
     d["mac"] = getMacString();
     d["free_heap"] = (uint32_t)ESP.getFreeHeap();
     JsonArray caps = d["capabilities"].to<JsonArray>();
@@ -135,7 +135,7 @@ static void emitStatusOnline() {
 
 static void handleIdentify(const char* jobId, const char* argsJson) {
     // Parse duration_s (default 3s). Non-blocking: main's loop blinks the LED
-    // until the window closes, so the MQTT task is never stalled (protocol §7.5).
+    // until the window closes, so the MQTT task is never stalled.
     int duration = 3;
     JsonDocument a;
     if (deserializeJson(a, argsJson) == DeserializationError::Ok) {
@@ -177,10 +177,10 @@ static void onMessage(char* /*topic*/, uint8_t* payload, unsigned int length) {
     static char args[512];
     if (!parseCmd((const char*)payload, length, cmd, sizeof(cmd),
                   jobId, sizeof(jobId), args, sizeof(args))) {
-        return;  // malformed or non-cmd envelope — rejected silently (§5.2)
+        return;  // malformed or non-cmd envelope — rejected silently
     }
 
-    // Control commands are the mandatory baseline (protocol §6.2, §7.5): handled
+    // Control commands are the mandatory baseline: handled
     // here, never queued, never rejected as unsupported, never deduped (a repeat
     // cancel must still take effect).
     if (strcmp(cmd, "cancel") == 0) {
@@ -198,8 +198,8 @@ static void onMessage(char* /*topic*/, uint8_t* payload, unsigned int length) {
         return;
     }
     if (strcmp(cmd, "set_monitor") == 0) {
-        // Persist to NVS and apply; the worker's idle tick runs due cycles
-        // (spec §8.3). Control command — never rejected, never queued (§7.5).
+        // Persist to NVS and apply; the worker's idle tick runs due cycles.
+        // Control command — never rejected, never queued.
         monitorSetFromArgs(args);
         emitAcceptedDone(jobId);
         return;
@@ -212,10 +212,10 @@ static void onMessage(char* /*topic*/, uint8_t* payload, unsigned int length) {
         return;
     }
 
-    // Recon commands: dedupe (QoS-1 redelivery safety, spec §5), then gate on
+    // Recon commands: dedupe (QoS-1 redelivery safety), then gate on
     // advertised capability, then hand to the worker's job queue. isCapable is
     // driven by the worker registry, so a command the node did not advertise in
-    // `announce` is rejected here as `unsupported` (protocol §6.2) — e.g.
+    // `announce` is rejected here as `unsupported` — e.g.
     // wifi_survey (no radio runner yet) or trace when raw ICMP is unavailable.
     if (seenBefore(jobId)) {
         return;
@@ -233,7 +233,7 @@ static void onMessage(char* /*topic*/, uint8_t* payload, unsigned int length) {
     strncpy(req.args, args, sizeof(req.args) - 1);
     req.args[sizeof(req.args) - 1] = '\0';
 
-    // Depth-1 queue: a job already running (queue full) means busy (§7.5).
+    // Depth-1 queue: a job already running (queue full) means busy.
     if (s_jobQueue == nullptr || xQueueSend(s_jobQueue, &req, 0) != pdTRUE) {
         emitError(jobId, "busy", "a job is already running");
     }
@@ -251,8 +251,7 @@ void mqttInit(const ProbeConfig& cfg) {
 
     s_mqtt.setServer(s_cfg.broker_host, s_cfg.broker_port);
     // Must clear the protocol's 1024-byte payload cap plus envelope overhead;
-    // PubSubClient's 256-byte default would silently truncate large frames
-    // (firmware spec §7).
+    // PubSubClient's 256-byte default would silently truncate large frames.
     s_mqtt.setBufferSize(1280);
     s_mqtt.setCallback(onMessage);
 
@@ -263,7 +262,7 @@ void mqttInit(const ProbeConfig& cfg) {
 
 bool mqttConnect() {
     // Last Will: retained on `status` so a restarting server learns of an
-    // ungraceful death on subscribe (protocol §4.4, §6.4). Built as a full
+    // ungraceful death on subscribe. Built as a full
     // envelope, matching the virtual probe's will payload.
     static char will[PAYLOAD_MAX_BYTES + 1];
     size_t willLen = buildEnvelope(will, sizeof(will), "status", getNodeId(),
@@ -352,7 +351,7 @@ void mqttEnqueueMonitor(const char* dataJson) {
     }
 }
 
-// --- survey choreography (spec §6.1) --------------------------------------
+// --- survey choreography ---------------------------------------------------
 
 void mqttPublishAccepted(const char* jobId) {
     char data[96];

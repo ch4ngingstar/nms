@@ -1,7 +1,7 @@
-"""In-memory pub/sub feeding SSE subscribers (spec §7.3).
+"""In-memory pub/sub feeding SSE subscribers.
 
 The bus is process-local, which is why the server must run as a single
-process; see spec §4.
+process.
 """
 
 import queue

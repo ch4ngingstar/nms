@@ -4,14 +4,14 @@
 #include <esp_mac.h>
 
 // The factory MAC never changes, so both strings are derived on first use and
-// cached. Static buffers, no heap — the memory discipline of spec §7 applies
-// here too even though identity is off the hot path.
+// cached. Static buffers, no heap — the same memory discipline used elsewhere
+// applies here too even though identity is off the hot path.
 static char s_nodeId[NODE_ID_LEN] = {0};
 static char s_macStr[MAC_STR_LEN] = {0};
 
 // Reads the six-byte factory MAC once. esp_efuse_mac_get_default() fills the
 // array high byte first: mac[0..2] is the OUI, mac[3..5] the device-specific
-// low three bytes the node_id is built from (spec §4.1).
+// low three bytes the node_id is built from.
 static const uint8_t* factoryMac() {
     static uint8_t mac[6];
     static bool read = false;

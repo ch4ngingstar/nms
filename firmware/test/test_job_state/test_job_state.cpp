@@ -1,4 +1,4 @@
-// Native unit tests for the duplicate-job dedup ring (protocol §7.1, §5).
+// Native unit tests for the duplicate-job dedup ring.
 //
 // Pure, no ArduinoJson. Pins the QoS-1 redelivery guard: a job_id is accepted
 // once, a repeat is suppressed, and the ring forgets only the oldest id once it

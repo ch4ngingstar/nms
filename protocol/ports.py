@@ -1,4 +1,4 @@
-"""Parsing of the `ports` command argument (spec §7.2)."""
+"""Parsing of the `ports` command argument."""
 
 from protocol.errors import ProtocolError
 

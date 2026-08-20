@@ -1,4 +1,4 @@
-"""Broker credential and ACL generation (spec §8.1, §8.2)."""
+"""Broker credential and ACL generation."""
 
 import secrets
 

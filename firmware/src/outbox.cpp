@@ -41,7 +41,7 @@ bool outboxEnqueue(const char* topic, const char* json, size_t len) {
     frame.len = (uint16_t)len;
 
     // Non-blocking send. On a full queue, drop the oldest frame and retry so the
-    // freshest observation wins (protocol §8.5 drop-oldest semantics).
+    // freshest observation wins (drop-oldest semantics).
     if (xQueueSend(s_queue, &frame, 0) != pdTRUE) {
         OutboxFrame discarded;
         if (xQueueReceive(s_queue, &discarded, 0) == pdTRUE) {
@@ -68,13 +68,13 @@ uint32_t outboxGetAndResetDropped() {
 
 #else
 
-// --- native host shim (spec §9.1) ----------------------------------------
+// --- native host shim ------------------------------------------------------
 //
 // A plain drop-oldest ring with semantics identical to the FreeRTOS queue above:
 // bounded capacity, drop-oldest on overflow, read-and-clear dropped counter.
 // The host tests drive producer and consumer sequentially on one thread, so no
 // atomics or FreeRTOS primitives are needed — which is the whole point of the
-// shim: outbox coverage runs under g++/Unity without a board (spec §9.1).
+// shim: outbox coverage runs under g++/Unity without a board.
 //
 // Unlike the device build (whose outboxInit is create-once so a reconnect keeps
 // buffered frames), this outboxInit resets the ring — exactly what a unit test's
@@ -99,7 +99,7 @@ bool outboxEnqueue(const char* topic, const char* json, size_t len) {
         return false;
     }
     if (s_count == OUTBOX_CAPACITY) {
-        // Full: drop the oldest so the freshest observation wins (protocol §8.5).
+        // Full: drop the oldest so the freshest observation wins.
         s_head = (s_head + 1) % OUTBOX_CAPACITY;
         --s_count;
         ++s_dropped;

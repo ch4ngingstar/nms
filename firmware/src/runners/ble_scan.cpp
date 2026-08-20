@@ -52,8 +52,8 @@ bool runBleScan(const RunnerCtx& ctx, EmitChunkFn emit, IsCancelledFn cancelled,
 
 #if NMS_HAS_BLE
     // A BLE scan coexists with the WiFi association (shared radio, controller
-    // arbitration) — no §6.1 disconnect. init() brings up the BT controller;
-    // deinit(true) hands its RAM back when we're done (spec §7 memory discipline).
+    // arbitration) — no survey-style disconnect is needed. init() brings up the
+    // BT controller; deinit(true) hands its RAM back when we're done.
     BLEDevice::init("nms-probe");
     BLEScan* scan = BLEDevice::getScan();
     if (scan == nullptr) {

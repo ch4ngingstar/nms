@@ -29,7 +29,7 @@ def test_invalid_fixtures_rejected(path):
 
 # The parametrized test above already validates these, but assert their presence
 # explicitly so a deleted Phase-4 fixture fails loudly rather than silently
-# shrinking the corpus (spec §6.4).
+# shrinking the corpus.
 PHASE4_FIXTURES = [
     "cmd_ble_scan", "cmd_wifi_ids", "result_chunk_ble_scan",
     "result_chunk_ids_alert", "result_chunk_frame_stats",

@@ -6,7 +6,7 @@ from probe.jobs import CAPABILITIES, run_command
 
 
 def test_capabilities_exclude_wifi_survey():
-    """A server has no radio; capabilities exist precisely for this (spec §9)."""
+    """A server has no radio; capabilities exist precisely for this."""
     assert "wifi_survey" not in CAPABILITIES
     assert "port_scan" in CAPABILITIES
 

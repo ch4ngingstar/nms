@@ -1,4 +1,4 @@
-// Captive portal provisioning (spec §4.3).
+// Captive portal provisioning.
 //
 // When the node boots unprovisioned it raises an open SoftAP named
 // "nms-probe-<node_id>", answers every DNS lookup with its own address so any

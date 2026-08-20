@@ -15,7 +15,7 @@
 #include "lwip/inet.h"
 #include "lwip/netif.h"
 #include "lwip/etharp.h"
-// Raw ICMP echo needs LWIP_RAW compiled into the prebuilt libs (spec §10.1).
+// Raw ICMP echo needs LWIP_RAW compiled into the prebuilt libs.
 #if (defined(CONFIG_LWIP_RAW) && CONFIG_LWIP_RAW) || (defined(LWIP_RAW) && LWIP_RAW)
 #define NMS_HAS_ICMP 1
 #else
@@ -26,7 +26,7 @@
 #define NMS_HAS_ICMP 0
 #endif
 
-static const uint32_t MAX_SWEEP_HOSTS = 512;  // bound a CIDR sweep (spec §7)
+static const uint32_t MAX_SWEEP_HOSTS = 512;  // bound a CIDR sweep
 static const size_t TCP_PROBE_PORTS = 5;
 
 #if NMS_HAS_LWIP
@@ -120,7 +120,7 @@ static bool tcpAlive(const struct in_addr& addr, int timeoutMs) {
     return false;
 }
 
-// Best-effort ARP-table MAC lookup (§10.1 ARP fallback). Returns true and fills
+// Best-effort ARP-table MAC lookup. Returns true and fills
 // `mac` ("aa:bb:...") if the host has an entry — a live L2 neighbour even when
 // ICMP/TCP were filtered. NOTE: etharp_find_addr is the one call here most likely
 // to need adjustment against the on-board lwIP headers; it is isolated so a tweak

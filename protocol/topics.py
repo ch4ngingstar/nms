@@ -1,4 +1,4 @@
-"""Topic construction and node identity for Probe Protocol v1 (spec §4)."""
+"""Topic construction and node identity for Probe Protocol v1."""
 
 import re
 

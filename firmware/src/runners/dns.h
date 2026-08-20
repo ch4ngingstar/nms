@@ -1,8 +1,8 @@
-// dns recon runner (spec §6.4; protocol result key "answers"). Unlike the
+// dns recon runner (result key "answers"). Unlike the
 // virtual probe (probe/jobs.py:dns), which delegates to getaddrinfo and can only
 // return addresses, the firmware speaks DNS on the wire so it can return
 // A/AAAA/CNAME/MX/TXT/NS/PTR records. The builder and response parser are pure
-// and host-tested against name-compression cases (spec §9.1).
+// and host-tested against name-compression cases.
 //
 // Chunk shape: {"answers":[{"name","type","ttl","value"}]}.
 #pragma once

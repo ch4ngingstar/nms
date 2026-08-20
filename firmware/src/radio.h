@@ -1,14 +1,14 @@
-// Radio scheduling and the survey sequence (spec §6). The 2.4 GHz radio has two
+// Radio scheduling and the survey sequence. The 2.4 GHz radio has two
 // mutually exclusive states — associated STATION (MQTT up) and off-AP
 // PROMISCUOUS (MQTT down by design) — arbitrated by a single owner. Any radio
 // request while the lock is held returns `radio_conflict`.
 //
-// §6.1 is the load-bearing rule: the survey MUST publish `accepted` and a
+// The load-bearing rule: the survey MUST publish `accepted` and a
 // retained `surveying` status, then cleanly DISCONNECT MQTT (which suppresses the
 // Last Will) *before* leaving the AP. Skipping the clean disconnect fires a false
 // node-death alert on every survey.
 //
-// Single-writer note (spec §5): PubSubClient is owned by the MQTT task. The
+// Single-writer note: PubSubClient is owned by the MQTT task. The
 // survey runs on the worker task, so it hands the client over via
 // mqttSurveyPause* — the MQTT task steps aside for the survey window, leaving the
 // worker the sole writer during it. Ownership is passed, never shared.
@@ -21,7 +21,7 @@
 
 enum RadioState { RADIO_STATION, RADIO_PROMISCUOUS };
 
-// A decoded access point (spec §6.3). `auth` is the raw wifi_auth_mode_t code;
+// A decoded access point. `auth` is the raw wifi_auth_mode_t code;
 // radioAuthName() maps it to the protocol's lowercase string.
 struct ApRecord {
     uint8_t bssid[6];
@@ -32,7 +32,7 @@ struct ApRecord {
     bool hidden;
 };
 
-// A client station observed associated to a BSSID (spec §6.3).
+// A client station observed associated to a BSSID.
 struct ClientRecord {
     uint8_t mac[6];
     uint8_t bssid[6];
@@ -41,7 +41,7 @@ struct ClientRecord {
 
 // Caller-owned survey buffers (sized from free heap by wifi_survey). radioRunSurvey
 // fills them, de-duplicated by BSSID / station MAC keeping the strongest RSSI, and
-// counts overflow drops (§6.3, §8.5).
+// counts overflow drops.
 struct SurveyBuffers {
     ApRecord* aps;
     size_t apCap;
@@ -58,13 +58,13 @@ struct SurveyBuffers {
 void radioInit(const ProbeConfig& cfg);
 
 // True while the radio is associated (STATION). The monitor scheduler checks this
-// to skip cycles that fall due during a survey (§6.2).
+// to skip cycles that fall due during a survey.
 bool radioInStation();
 
 // Maps a wifi_auth_mode_t code to the protocol `auth` string (e.g. "wpa2").
 const char* radioAuthName(uint8_t authMode);
 
-// Runs the full §6.1 survey sequence: accepted → retained surveying → clean
+// Runs the full survey sequence: accepted → retained surveying → clean
 // DISCONNECT → leave AP → AP scan + client sniff (channel-hopping for durationS)
 // → reassociate → reconnect MQTT (re-announce + retained online). Fills `buf`.
 // Returns true on success; false with errCode/errMsg set on `radio_conflict`
@@ -74,9 +74,9 @@ bool radioRunSurvey(const char* jobId, uint16_t durationS,
                     SurveyBuffers& buf,
                     char* errCode, size_t ecs, char* errMsg, size_t ems);
 
-// --- passive IDS (wifi_ids, spec §6.4) ------------------------------------
+// --- passive IDS (wifi_ids) -------------------------------------------------
 //
-// wifi_ids reuses the survey's §6.1 radio choreography (including the retained
+// wifi_ids reuses the survey's radio choreography (including the retained
 // `surveying` status — it is the same off-AP window, just classifying frames
 // instead of cataloguing them) but is a strictly passive listener: it transmits
 // nothing. It is the detection counterpart to the deauth attack the firmware
@@ -111,7 +111,7 @@ struct IdsAlert {
 
 // Caller-owned alert buffer plus frame-type tallies. radioRunIds de-duplicates
 // alerts (deauth by transmitter MAC, rogue/evil-twin by BSSID) and counts drops
-// on overflow (§8.5), the same discipline as the survey buffers.
+// on overflow, the same discipline as the survey buffers.
 struct IdsBuffers {
     IdsAlert* alerts;
     size_t alertCap;
@@ -125,7 +125,7 @@ struct IdsBuffers {
     uint32_t probeReq;
 };
 
-// Runs the §6.1 disconnect sequence, then listens in promiscuous mode for
+// Runs the survey's disconnect sequence, then listens in promiscuous mode for
 // durationS (channel-hopping across `channels`), classifying every frame against
 // `known` to fill `buf`, then reassociates and reconnects MQTT. Chunk emission
 // and `done` are the caller's job. Returns false with errCode/errMsg set on

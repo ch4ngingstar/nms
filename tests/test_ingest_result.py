@@ -90,7 +90,7 @@ def test_result_for_unknown_job_is_dropped(db, node):
 
 
 def test_wifi_survey_chunks_project_into_observations(db, node):
-    """The multi-vantage correlation dataset (spec §6.2)."""
+    """wifi_survey chunks project into ap_observations for multi-vantage RSSI correlation."""
     db.session.add(Job(job_id="job-rf", node_id=node.node_id,
                        cmd="wifi_survey", args={}))
     db.session.commit()

@@ -1,10 +1,10 @@
-// Scheduled device monitoring (spec §8.3; protocol §7.6). `set_monitor` persists
+// Scheduled device monitoring. `set_monitor` persists
 // its config to NVS so the schedule survives reboots and server restarts; the
 // worker calls monitorTick() while idle to run a due cycle — ICMP ping and/or TCP
 // port probes per device — publishing {cycle_ts, results[]} on the node's
 // `monitor` topic through the outbox.
 //
-// Cycles that fall due during a survey are skipped, not queued (§6.2): the node
+// Cycles that fall due during a survey are skipped, not queued: the node
 // reports only observations it actually made, so a gap in the history is honest.
 #pragma once
 

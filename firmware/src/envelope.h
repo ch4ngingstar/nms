@@ -1,8 +1,8 @@
-// Protocol envelope construction and parsing (protocol spec §5.2).
+// Protocol envelope construction and parsing.
 //
 // Deliberately free of Arduino and network dependencies so it compiles in the
 // PlatformIO `native` env and is unit-tested on the host against the golden
-// corpus (firmware spec §9.1). Everything operates on caller-owned char[]
+// corpus. Everything operates on caller-owned char[]
 // buffers: no Arduino String, no returned heap.
 #pragma once
 
@@ -14,7 +14,7 @@
 // secrets.token_hex(8) reference (probe/virtual_probe.py).
 static const size_t MSG_ID_HEX_LEN = 16;
 
-// A single published payload must not exceed 1024 bytes (protocol §5.3).
+// A single published payload must not exceed 1024 bytes.
 // buildEnvelope refuses to produce anything larger, which forces producers to
 // chunk rather than silently emit an over-cap frame.
 static const size_t PAYLOAD_MAX_BYTES = 1024;
@@ -31,11 +31,11 @@ size_t generateMsgId(char* buf, size_t bufSize);
 size_t buildEnvelope(char* out, size_t outSize, const char* type,
                      const char* node, uint32_t ts, const char* dataJson);
 
-// Parses an inbound `cmd` envelope (protocol §7.1). Validates v == 1, type ==
+// Parses an inbound `cmd` envelope. Validates v == 1, type ==
 // "cmd", and the presence of data.cmd and data.job_id. On success, copies
 // data.cmd and data.job_id (truncated to fit their buffers) and serializes
 // data.args into argsOut ("{}" when args is absent). Returns false — rejecting
-// the message per §5.2 — on any parse or validation failure.
+// the message — on any parse or validation failure.
 bool parseCmd(const char* json, size_t len,
               char* cmdOut, size_t cmdSize,
               char* jobIdOut, size_t jobIdSize,

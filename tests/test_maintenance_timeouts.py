@@ -50,7 +50,7 @@ def test_pending_job_can_time_out(db, node):
 
 
 def test_wifi_survey_gets_its_extended_deadline(db, node):
-    """An announced promiscuous-mode absence is not a hang (spec §8)."""
+    """An announced promiscuous-mode absence is not a hang."""
     make_job(db, node, "job-rf", NOW - timedelta(seconds=200),
              cmd="wifi_survey", deadline_s=30 + 60)
     assert sweep_timeouts(now=NOW) == 1

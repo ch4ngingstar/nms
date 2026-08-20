@@ -81,7 +81,7 @@ bool parseCmd(const char* json, size_t len,
         return false;
     }
 
-    // Envelope gate (protocol §5.2): wrong version or type is a rejection, not
+    // Envelope gate: wrong version or type is a rejection, not
     // a best-effort parse.
     if (doc["v"] != 1 || strcmp(doc["type"] | "", "cmd") != 0) {
         return false;

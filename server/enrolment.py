@@ -1,4 +1,4 @@
-"""Node enrolment: register a node and mint its broker credentials (spec §11).
+"""Node enrolment: register a node and mint its broker credentials.
 
 The server generates a password and an ACL block and returns the exact commands
 an operator runs to apply them. It never writes broker configuration itself —

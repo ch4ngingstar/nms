@@ -1,4 +1,4 @@
-"""Table definitions for the C2 server (spec §6.1)."""
+"""Table definitions for the C2 server."""
 
 from datetime import datetime, timezone
 
@@ -110,7 +110,7 @@ class Job(db.Model):
     args = db.Column(db.JSON, nullable=False, default=dict)
     state = db.Column(db.String(STATE_LEN), nullable=False, default="pending", index=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
-    # The deadline slides from the last event, not from creation (spec §8).
+    # The deadline slides from the last event, not from creation.
     last_event_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
     deadline_s = db.Column(db.Integer, nullable=False, default=120)
     accepted_at = db.Column(db.DateTime(timezone=True))
@@ -188,7 +188,7 @@ class ApObservation(db.Model):
 
 
 class BleObservation(db.Model):
-    """A BLE device seen by one probe during a ble_scan job (spec §6.2).
+    """A BLE device seen by one probe during a ble_scan job.
 
     The ble_scan analogue of ap_observations: the same multi-vantage question —
     GROUP BY mac comparing rssi across node_id — is what justifies a typed table
@@ -213,7 +213,7 @@ class BleObservation(db.Model):
     rssi = db.Column(db.Integer)
     connectable = db.Column(db.Boolean, default=False)
     # BT company identifier as reported by the probe (4-hex, e.g. "004C"); the
-    # probe emits the raw id and the server resolves the vendor name (spec §6.5).
+    # probe emits the raw id and the server resolves the vendor name.
     manufacturer = db.Column(db.String(16))
     observed_at = db.Column(db.DateTime(timezone=True), nullable=False,
                             default=_utcnow, index=True)

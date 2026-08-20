@@ -1,4 +1,4 @@
-"""MQTT client thread bridging the broker to the ingest handlers (spec §7.1).
+"""MQTT client thread bridging the broker to the ingest handlers.
 
 The bridge owns the connection and the thread; `ingest` owns the semantics.
 Every inbound payload is validated by `protocol.validate` *before* anything
@@ -67,7 +67,7 @@ class MqttBridge:
                                   client_id=client_id)
         if username is not None:
             self.client.username_pw_set(username, password)
-        # Reconnect with exponential backoff and jitter (protocol spec §8.4).
+        # Reconnect with exponential backoff and jitter.
         self.client.reconnect_delay_set(min_delay=1, max_delay=60)
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message

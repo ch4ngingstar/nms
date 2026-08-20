@@ -1,7 +1,7 @@
-// wifi_ids recon runner (spec §6.4; protocol result keys "alerts"/"frame_stats").
+// wifi_ids recon runner (result keys "alerts"/"frame_stats").
 //
 // A passive distributed wireless IDS. Like wifi_survey it is a radio-owning
-// runner (managesLifecycle=true): radioRunIds performs the §6.1 disconnect
+// runner (managesLifecycle=true): radioRunIds performs the survey's disconnect
 // sequence and the retained `surveying` status itself, then listens in
 // promiscuous mode classifying frames — it transmits nothing. It is the
 // detection counterpart to the deauth attack this firmware deliberately omits:

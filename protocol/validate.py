@@ -1,4 +1,4 @@
-"""Message validation against the Probe Protocol v1 schemas (spec §5, §9)."""
+"""Message validation against the Probe Protocol v1 schemas."""
 
 import json
 from functools import lru_cache
@@ -30,7 +30,7 @@ def _check(validator: Draft202012Validator, instance, label: str) -> None:
 
 
 def validate_payload_size(payload: bytes) -> bytes:
-    """Enforce the 1024-byte published-message ceiling (spec §5.3)."""
+    """Enforce the 1024-byte published-message ceiling."""
     if len(payload) > MAX_PAYLOAD_BYTES:
         raise ProtocolError(
             f"payload is {len(payload)} bytes, exceeds {MAX_PAYLOAD_BYTES}"

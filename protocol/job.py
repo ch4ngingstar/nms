@@ -1,4 +1,4 @@
-"""Server-side tracking of a single job's result stream (spec §7.4)."""
+"""Server-side tracking of a single job's result stream."""
 
 from enum import Enum
 

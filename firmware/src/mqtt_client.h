@@ -1,11 +1,11 @@
-// MQTT connection management (firmware spec §5, §6; protocol §4.3, §4.4, §6).
+// MQTT connection management.
 //
 // This module is the sole owner of the PubSubClient — the single-writer
-// discipline that lets §5 skip a mutex. It runs entirely on the MQTT task
+// discipline that lets it skip a mutex. It runs entirely on the MQTT task
 // (core 0): it dials the broker, publishes announce/status/telemetry directly,
 // drains the worker's outbox, and parses inbound commands. Recon jobs are
 // handed to the worker task through a depth-1 queue; cancel/identify/reboot/
-// get_config are handled here immediately (protocol §7.5).
+// get_config are handled here immediately.
 #pragma once
 
 #include <stddef.h>
@@ -43,7 +43,7 @@ bool mqttConnect();
 bool mqttConnected();
 
 // One backoff step: if reconnect fails, sleeps for an exponentially growing,
-// jittered interval (1s..60s, protocol §8.4). Call from loop() while offline.
+// jittered interval (1s..60s). Call from loop() while offline.
 void mqttReconnectWithBackoff();
 
 // Services the PubSubClient (keepalive + inbound dispatch). Call every loop.
@@ -52,7 +52,7 @@ void mqttLoop();
 // Publishes every frame currently queued in the outbox. Call every loop.
 void mqttDrainOutbox();
 
-// Publishes a telemetry sample if the 30s interval has elapsed (protocol §6.5).
+// Publishes a telemetry sample if the 30s interval has elapsed.
 void mqttEmitTelemetry();
 
 // Builds a `result` envelope around `dataJson` and enqueues it on the outbox.
@@ -61,21 +61,21 @@ void mqttEmitTelemetry();
 void mqttEnqueueResult(const char* dataJson);
 
 // Builds a `monitor` envelope around `dataJson` and enqueues it on the node's
-// monitor topic (spec §8.3). Called by the monitor scheduler from the worker.
+// monitor topic. Called by the monitor scheduler from the worker.
 void mqttEnqueueMonitor(const char* dataJson);
 
-// --- survey choreography (spec §6.1) --------------------------------------
+// --- survey choreography ---------------------------------------------------
 //
 // During a survey the worker/radio owns PubSubClient directly while the MQTT task
-// steps aside, so exactly one task writes it at a time (single-writer, spec §5).
+// steps aside, so exactly one task writes it at a time (single-writer).
 // These are the operations the radio drives on that borrowed client.
 
 // Publishes `accepted`/retained `surveying` directly (QoS 0) while still
-// connected — before the disconnect, per §6.1 steps (a) and (b).
+// connected — the first two steps of the survey handoff, before the disconnect.
 void mqttPublishAccepted(const char* jobId);
 void mqttPublishSurveying(uint32_t expectBackInS);
 
-// Clean MQTT DISCONNECT — the step that suppresses the Last Will (§6.1 step c).
+// Clean MQTT DISCONNECT — the final handoff step, which suppresses the Last Will.
 void mqttDisconnectClean();
 
 // Pause/resume handoff: the radio sets the pause, waits for the MQTT task to
@@ -104,4 +104,4 @@ void mqttSetState(const char* state);
 // Increments the completed-job counter reported in telemetry.
 void mqttIncJobsDone();
 
-// computeBackoffMs (protocol §8.4) now lives in backoff.h, included above.
+// computeBackoffMs now lives in backoff.h, included above.

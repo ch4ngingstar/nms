@@ -1,4 +1,4 @@
-// Node identity derivation (spec §4.1).
+// Node identity derivation.
 //
 // node_id is "probe-" followed by the low three bytes of the factory MAC in
 // lowercase hex. This must match protocol/topics.py's regex

@@ -1,4 +1,4 @@
-"""ICMP ping and TCP port probing (spec §9).
+"""ICMP ping and TCP port probing.
 
 Carried forward essentially unchanged from the working logic in the original
 app.py — `build_ping_command`, `parse_latency_ms`, and `check_port` — now keyed

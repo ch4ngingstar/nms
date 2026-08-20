@@ -1,5 +1,4 @@
-// Worker task and recon job lifecycle (firmware spec §5 task topology, §6.2;
-// protocol §7.3–§7.5).
+// Worker task and recon job lifecycle.
 //
 // The worker owns the *execution* side of a job: it blocks on the MQTT task's
 // job queue, emits the `accepted` -> `chunk`* -> `done`|`error` sequence, owns
@@ -22,7 +21,7 @@
 // {"open":[{...}]}). The worker wraps that object in a
 // {"event":"chunk","job_id":..,"seq":N, ...} result envelope, so the runner
 // must not add event/job_id/seq itself. Runners MUST call `cancelled` between
-// units of work and return promptly once it is true (protocol §7.4).
+// units of work and return promptly once it is true.
 
 // Emits one chunk payload object. `sink` is an opaque worker-owned handle passed
 // back verbatim; runners never interpret it.
@@ -53,7 +52,8 @@ typedef bool (*RunnerFn)(const RunnerCtx& ctx, EmitChunkFn emit,
 // Looks up the runner registered for `cmd`, or nullptr if this firmware does not
 // implement it. Exposed for the capability advertisement in mqtt_client so the
 // `announce` list and the dispatch table cannot drift apart. See worker.cpp for
-// the registry itself — and for why `wifi_deauth` is deliberately absent from it.
+// the registry itself, where every implemented command — including
+// `wifi_deauth` — is listed.
 RunnerFn workerLookupRunner(const char* cmd);
 
 // Writes the names of the registered recon commands into `out` (up to `max`),
@@ -61,6 +61,6 @@ RunnerFn workerLookupRunner(const char* cmd);
 // node advertises exactly what it can dispatch — no more, no less.
 size_t workerCapabilities(const char** out, size_t max);
 
-// Spawns the worker FreeRTOS task on core 1 (8KB stack, firmware spec §5). Call
+// Spawns the worker FreeRTOS task on core 1 (8KB stack). Call
 // once after mqttInit(); the task lives for the process lifetime.
 void workerStart();

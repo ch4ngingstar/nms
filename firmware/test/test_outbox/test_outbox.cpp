@@ -1,4 +1,4 @@
-// Native unit tests for the bounded outbox (spec §5, §6.3; protocol §8.5).
+// Native unit tests for the bounded outbox.
 //
 // Runs against the native ring-buffer shim in outbox.cpp (the FreeRTOS queue is
 // #ifdef'd out off-device). No ArduinoJson. Pins FIFO order, the drop-oldest

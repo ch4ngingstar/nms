@@ -1,4 +1,4 @@
-"""Command dispatch: turn an operator request into a published cmd (spec §8).
+"""Command dispatch: turn an operator request into a published cmd.
 
 Job creation is deliberately split from the MQTT client. This module builds
 and validates the command message, records the job row, and hands the encoded
@@ -18,14 +18,14 @@ from server.events import bus
 from server.models import Job, Node
 
 # Control commands are a mandatory baseline every node must honour, so they are
-# dispatchable regardless of the advertised capability set (spec §8, protocol
-# spec §6.2). Recon commands must appear in the node's capabilities.
+# dispatchable regardless of the advertised capability set. Recon commands must
+# appear in the node's capabilities.
 CONTROL_COMMANDS = {"set_monitor", "cancel", "identify", "reboot", "get_config"}
 
 # Every recon command the protocol defines. A node still only runs the subset it
 # advertises in `announce.capabilities`; this set just separates "unknown command"
 # from "known command this node did not advertise" for a clearer rejection.
-# ble_scan and wifi_ids are the Phase-4 radio additions (spec §6.4).
+# ble_scan and wifi_ids are the Phase-4 radio additions.
 RECON_COMMANDS = frozenset({
     "port_scan", "banner_grab", "dns", "trace", "discover",
     "wifi_survey", "ble_scan", "wifi_ids", "wifi_deauth",
@@ -103,7 +103,7 @@ def cancel_job(job_id: str) -> Job | None:
     """Ask the owning node to abandon a job. Returns the job, or None if absent.
 
     The job is not marked terminal here; the node answers with an `error`
-    event carrying code `cancelled`, which the ingest path records (spec §13).
+    event carrying code `cancelled`, which the ingest path records.
     """
     job = db.session.get(Job, job_id)
     if job is None:

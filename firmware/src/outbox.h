@@ -1,4 +1,4 @@
-// Bounded cross-task outbox (firmware spec §5, §6.3; protocol §8.5).
+// Bounded cross-task outbox.
 //
 // One FreeRTOS queue serves two jobs at once: it hands pre-serialized frames
 // from the worker task (core 1) to the MQTT task (core 0), and — because it
@@ -16,7 +16,7 @@
 
 #include "envelope.h"  // PAYLOAD_MAX_BYTES
 
-// Sized so a frame holds a full-cap envelope (protocol §5.3) plus the longest
+// Sized so a frame holds a full-cap envelope plus the longest
 // per-node topic. 32 slots is the offline-buffer depth.
 static const size_t OUTBOX_TOPIC_MAX = 80;
 static const size_t OUTBOX_JSON_MAX = PAYLOAD_MAX_BYTES;

@@ -1,4 +1,4 @@
-// Native unit tests for envelope build/parse (protocol §5.2, §7.1).
+// Native unit tests for envelope build/parse.
 //
 // Uses ArduinoJson (header-only, host-portable) so it runs under `pio test -e
 // native`, not bare g++. Pins msg_id shape, the envelope field layout, the

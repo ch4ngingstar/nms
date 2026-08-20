@@ -1,4 +1,4 @@
-// Native unit tests for the reconnect backoff (protocol §8.4).
+// Native unit tests for the reconnect backoff.
 //
 // Pure integer math, no ArduinoJson — compiles and runs under g++ as well as
 // `pio test -e native`. Pins the base-doubling schedule, the 60s ceiling, and

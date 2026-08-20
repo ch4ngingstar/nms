@@ -1,9 +1,9 @@
-"""Conformance suite over MQTT (protocol spec §9 layer 3, server spec §13).
+"""Conformance suite over MQTT.
 
 These are scenario tests pointed at a live broker and a live probe. By default
 they run against the in-process virtual probe on a throwaway Docker broker; if
 the Docker daemon is unavailable they SKIP rather than fail, so the unit suite
-still runs everywhere (spec §13).
+still runs everywhere.
 
 Retargeting at hardware (--node-id != "probe-server", see conftest.py):
   * The Docker broker fixture and the in-process VirtualProbe are both skipped.
@@ -12,7 +12,7 @@ Retargeting at hardware (--node-id != "probe-server", see conftest.py):
     the server DB exactly as in virtual mode.
   * Broker credentials come from NMS_BROKER_USER / NMS_BROKER_PASS when set.
 
-Scenarios (spec §13):
+Scenarios:
   1. Clean streamed job: accepted -> chunks -> done
   2. Deliberate seq gap -> job lands `incomplete`, gaps recorded
   5. Graceful `surveying` disconnect -> no false offline

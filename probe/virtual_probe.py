@@ -1,10 +1,10 @@
-"""The virtual probe process (spec §9).
+"""The virtual probe process.
 
 `VirtualProbe` holds the protocol behaviour with an injected publisher, so the
 whole job lifecycle — accepted, streamed chunks, done/error, busy rejection,
 cancellation — is testable without a broker. `main()` wires it to a real paho
 client with a Last Will, which is what makes killing this process demonstrate
-node-death detection (spec §13, scenarios 5 and 6).
+node-death detection (scenarios 5 and 6).
 """
 
 import json
@@ -151,7 +151,7 @@ def main() -> None:  # pragma: no cover - integration entry point
                          config_path=config_path)
 
     # Last Will: the broker publishes this if the probe dies ungracefully,
-    # which is exactly how node-death detection is demonstrated (spec §13).
+    # which is exactly how node-death detection is demonstrated.
     lwt = json.dumps({"v": 1, "type": "status", "node": node_id,
                       "msg_id": secrets.token_hex(8), "ts": int(time.time()),
                       "data": {"state": "offline", "reason": "lwt"}})

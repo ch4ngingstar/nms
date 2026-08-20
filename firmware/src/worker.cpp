@@ -30,14 +30,14 @@
 // it cannot run nor silently run one it never announced.
 //
 // The STATION-mode recon runners land here as implemented. `trace` is
-// conditional on raw-ICMP support (spec §10.1): when NMS_TRACE_AVAILABLE is 0 the
+// conditional on raw-ICMP support: when NMS_TRACE_AVAILABLE is 0 the
 // row is compiled out, so the command is neither dispatched nor advertised and
 // the server disables it for this node with no protocol change.
 //
 // `managesLifecycle` marks a runner that drives its own `accepted`/status and
 // MQTT choreography — `wifi_survey`, `wifi_ids`, and `wifi_deauth` which publish
 // `accepted` and status itself and disconnect/reconnect MQTT around the radio
-// window (§6.1). The worker skips its own `accepted` for these but still emits
+// window. The worker skips its own `accepted` for these but still emits
 // the final `done` (which drains once MQTT is back).
 //
 // `ble_scan` is a normal-lifecycle runner: BLE coexists with the WiFi
@@ -206,7 +206,7 @@ static void runJob(const JobRequest& req) {
 
         if (sink.cancelled) {
             // A cancelled job is not a success: the node reports the cancellation
-            // as an error event with code "cancelled" (protocol §7.5). ingest
+            // as an error event with code "cancelled". ingest
             // records that; cancel is not marked terminal server-side.
             emitError(req.job_id, "cancelled", "job cancelled by operator");
         } else if (ok) {
@@ -224,10 +224,10 @@ static void runJob(const JobRequest& req) {
 // --- task -----------------------------------------------------------------
 
 // Idle hook: when no job is running, a persisted monitor schedule may be due
-// (spec §5 "monitor cycles when idle", §8.3). monitorTick() is cheap when no
+// ("monitor cycles when idle"). monitorTick() is cheap when no
 // schedule is set or none is due; when a cycle is due it runs the ping/port
 // probes and enqueues one `monitor` frame through the outbox. It self-gates on
-// radioInStation() so cycles are skipped during a survey window (§6.2).
+// radioInStation() so cycles are skipped during a survey window.
 static void checkMonitorDue() {
     monitorTick();
 }
@@ -254,7 +254,7 @@ static void workerTask(void* /*arg*/) {
 }
 
 void workerStart() {
-    // Core 1, 8KB stack (firmware spec §5): the core split keeps a long scan off
+    // Core 1, 8KB stack: the core split keeps a long scan off
     // core 0 so it cannot starve MQTT keepalive on the MQTT task.
     xTaskCreatePinnedToCore(workerTask, "worker", 8192, nullptr, /*priority=*/1,
                             nullptr, /*core=*/1);

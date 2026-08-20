@@ -1,5 +1,5 @@
-// Golden-corpus cross-check for the firmware envelope layer (spec §9.1;
-// CLAUDE.md "the golden corpus decides").
+// Golden-corpus cross-check for the firmware envelope layer
+// (CLAUDE.md "the golden corpus decides").
 //
 // The same protocol/golden/ fixtures that pin the Python validator are replayed
 // through the firmware's parseCmd so the two implementations agree byte-for-byte
