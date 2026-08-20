@@ -34,7 +34,8 @@ flowchart LR
 - **Multi-vantage RF survey** — access points correlated by BSSID across every probe, with
   per-probe signal strength.
 - **A formally-specified protocol** — a JSON-Schema contract with a golden-fixture corpus and
-  a conformance suite that runs against both the reference implementation and firmware.
+  a conformance suite that runs against both the reference implementation and firmware. See
+  [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
 - **Live operations console** — a real-time dashboard over one Server-Sent-Events stream.
 
 ## Screenshots
@@ -70,8 +71,8 @@ python -m pytest tests/ -q
 - `firmware/` — ESP32 (WROOM-32) probe firmware: radio state machine, wifi_ids, ble_scan.
 - `templates/` — the web operations console.
 
-Design specs live in [`docs/design/`](docs/design/); the system overview is in
-[`ARCHITECTURE.md`](ARCHITECTURE.md).
+The wire protocol is specified in [`docs/PROTOCOL.md`](docs/PROTOCOL.md); the system overview is
+in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 ## Security & ethics
 

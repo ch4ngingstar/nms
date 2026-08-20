@@ -81,7 +81,9 @@ read another node's commands.
 
 ## Protocol invariants
 
-Shared with the C++ firmware and not free to adjust:
+Full wire-format reference — envelope, topics, commands, result shapes, error codes — is in
+[`docs/PROTOCOL.md`](docs/PROTOCOL.md). The invariants below are the parts that are shared with
+the C++ firmware and not free to adjust:
 
 - `ts` is Unix seconds, UTC, never milliseconds. Envelope is `{v, type, node, msg_id, ts, data}`.
 - A published payload must not exceed 1024 bytes; producers chunk to stay under it.

@@ -1,21 +1,46 @@
 __pycache__/
 *.py[cod]
+*$py.class
 .venv/
 venv/
+env/
 .pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
 instance/
 *.db
+*.sqlite3
 
-# Broker password hashes: generated per deployment, never committed (spec §12).
+.env
+.env.*
 config/mosquitto/passwd
+
+.pio/
+firmware/.pio/
+firmware/.pioenvs/
+firmware/.piolibdeps/
+*.bin
+*.elf
+*.hex
+*.o
+
+.vscode/
+.idea/
+compile_commands.json
+
+CLAUDE.md
+.claude/
+.cursor/
+.superpowers/
+
+.DS_Store
+Thumbs.db
+*.log
 
 # Junk files from shell commands with unescaped quote/backtick characters
 `
 '
-
-# Local tooling / editor scratch
-.superpowers/
-.claude/
-
-# Internal planning docs (not part of the published project)
-docs/design/plans/

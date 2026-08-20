@@ -2,7 +2,7 @@
 
 The models, polling thread, and TCP probing that once lived here (415 lines)
 now belong to the server/ and probe/ packages. This file is wiring only.
-See docs/design/2026-08-16-server-c2-design.md.
+See ARCHITECTURE.md and docs/PROTOCOL.md.
 """
 
 from server.app import create_app
