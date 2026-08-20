@@ -82,4 +82,5 @@ responsible-use statement: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). Third-party attribution in [`NOTICE`](NOTICE).
+MIT — see [`LICENSE`](LICENSE). Third-party attribution (and a record of which
+techniques were adopted and which were deliberately not) in [`firmware/NOTICE`](firmware/NOTICE).
