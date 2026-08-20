@@ -7,21 +7,36 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+*.egg-info/
+dist/
+build/
 
 instance/
 *.db
 *.sqlite3
 
 .env
+.env.*
 config/mosquitto/passwd
 
 .pio/
+firmware/.pio/
+firmware/.pioenvs/
+firmware/.piolibdeps/
 *.bin
 *.elf
+*.hex
+*.o
 
 .vscode/
 .idea/
+compile_commands.json
+
 
 .DS_Store
 Thumbs.db
 *.log
+
+# Junk files from shell commands with unescaped quote/backtick characters
+`
+'
