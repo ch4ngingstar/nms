@@ -17,3 +17,13 @@ def test_factory_builds_with_a_secret_key():
     rules = {rule.rule for rule in app.url_map.iter_rules()}
     assert "/api/nodes" in rules
     assert "/api/stream" in rules
+    # The operations console is served at the root, same origin as the API.
+    assert "/" in rules
+
+
+def test_root_serves_the_console():
+    app = create_app({"SECRET_KEY": "x",
+                      "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"})
+    response = app.test_client().get("/")
+    assert response.status_code == 200
+    assert b"Command &amp; Control" in response.data

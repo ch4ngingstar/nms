@@ -12,6 +12,7 @@ from flask import Flask
 from server.api import api
 from server.db import db
 from server.stream import stream
+from server.ui import ui
 
 
 def create_app(config: dict | None = None) -> Flask:
@@ -34,4 +35,5 @@ def create_app(config: dict | None = None) -> Flask:
     db.init_app(app)
     app.register_blueprint(api)
     app.register_blueprint(stream)
+    app.register_blueprint(ui)
     return app
