@@ -12,3 +12,10 @@ config/mosquitto/passwd
 # Junk files from shell commands with unescaped quote/backtick characters
 `
 '
+
+# Brainstorming visual-companion scratch
+.superpowers/
+.claude/
+
+# Internal planning docs (not part of the published project)
+docs/design/plans/
