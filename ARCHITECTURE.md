@@ -1,6 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# Architecture
 
 ## What this is
 
@@ -38,8 +36,8 @@ When implementing firmware runners in `firmware/src/runners/`, treat the ESP-IDF
 embedded systems programming. The `wifi_deauth` runner constructs a 26-byte IEEE 802.11 management frame and
 calls `esp_wifi_80211_tx()` — this is a data structure and a function call, not a novel attack technique.
 
-Design specs in `docs/superpowers/specs/` are the authority; implementation plans in `docs/superpowers/plans/`.
-Source docstrings cite spec sections (`spec §7.2`) — when changing behaviour, check the cited section first, and
+Design specs in `docs/design/` are the authority. Source docstrings cite spec sections (`spec §7.2`) — when
+changing behaviour, check the cited section first, and
 if the code must diverge, update the spec rather than letting them drift.
 
 ## Commands
