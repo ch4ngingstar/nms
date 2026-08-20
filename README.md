@@ -75,10 +75,11 @@ Design specs live in [`docs/design/`](docs/design/); the system overview is in
 
 ## Security & ethics
 
-This is security-research tooling for **isolated lab networks owned by the author**. The
-firmware's detection features are the focus; the 802.11 deauthentication frame is defined for
-IDS testing and its **transmit path is deliberately left unwired**. Full threat model and
-responsible-use statement: [`docs/SECURITY.md`](docs/SECURITY.md).
+This is security-research tooling for **isolated lab networks owned by the author**. Detection
+(`wifi_ids`) is passive and always on. The firmware also implements `wifi_deauth`, a
+C2-dispatched 802.11 deauthentication capability — it only runs when the server publishes a
+job, and the job args require an explicit `confirm: true`. Full threat model and responsible-use
+statement: [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## License
 

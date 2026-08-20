@@ -26,6 +26,9 @@ by this project; firmware spec §6.4):
   sniff (extended)     Promiscuous frame classification by         wifi_ids (passive IDS:
                        type/subtype for security events            deauth-flood/rogue-AP/
                                                                    evil-twin detection)
+  deauth               Raw 802.11 deauth frame construction via     wifi_deauth (C2-gated,
+                       esp_wifi_80211_tx(), client discovery via    confirm: true required —
+                       promiscuous sniffing                        see docs/SECURITY.md)
   scan (BLE)           BLE device enumeration + AD payload parse   ble_scan
   discovery            ICMP sweep of a local subnet                discover
   ping                 ICMP echo for reachability/latency          monitor `ping` check
@@ -45,13 +48,6 @@ structurally cannot do.
 
 Deliberately NOT adopted:
 
-  * The raw 802.11 deauthentication attack (Bit-Pirate `deauth` /
-    WifiService::deauthAttack, esp_wifi_80211_tx frame injection). Transmitting
-    deauth frames is a wireless denial-of-service affecting every client in RF
-    range, not an isolated bench. The `wifi_deauth` runner is NOT registered in
-    the worker dispatch table, is never advertised in `announce.capabilities`,
-    and cannot be dispatched by this firmware. See the standing decision recorded
-    in firmware/src/worker.cpp.
   * The interactive-console commands (ssh, telnet, modbus, http analyze, webui,
     waterfall). They serve a one-operator handheld tool; a headless fleet node
     reporting to a C2 server has no on-device shell.

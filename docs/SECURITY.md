@@ -41,15 +41,20 @@ The `wifi_ids` runner reports alerts that the server projects into a typed timel
 The end-to-end path — probe report → typed alert → operator timeline — is covered by
 `tests/test_attack_replay.py`.
 
-## Responsible dual-use
+## Dual-use: wifi_deauth
 
-The firmware defines the 26-byte 802.11 deauthentication management frame so the IDS can be
-tested against a realistic signal, and because understanding the frame is what makes
-detection possible. **The transmit path for that frame is deliberately left unwired** — the
-`wifi_deauth` runner is not registered in the worker dispatch table, is never advertised in a
-node's `announce.capabilities`, and cannot be dispatched.
+The firmware implements `wifi_deauth`: a C2-dispatched job that transmits standard 26-byte
+802.11 deauthentication frames — broadcast, plus any clients discovered via a short promiscuous
+sniff of the target BSSID — for an operator-specified `duration_s` and `bursts`. It is
+registered in the worker dispatch table and advertised in `announce.capabilities` like any other
+recon command; there is no on-device trigger, so it only runs when the C2 server publishes a
+`cmd` for it.
+
+The job schema requires `target_bssid` and `confirm: true`, and the runner rejects the job if
+`confirm` is missing or false. This is an explicit-intent check on the command args, not an
+authorization boundary — anyone able to publish a `cmd` for a node can set `confirm: true`.
+Access control is the broker ACL scoping described under Identity, above, not this flag.
 
 The adopted techniques are standard, publicly documented ESP-IDF / Arduino-ESP32 APIs. The
 frame-construction reference is the MIT-licensed ESP32-Bit-Pirate project; a technique-by-
-technique record of exactly what was adopted and what was deliberately not is in
-[`firmware/NOTICE`](../firmware/NOTICE).
+technique record of what was adopted from it is in [`firmware/NOTICE`](../firmware/NOTICE).
